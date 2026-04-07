@@ -193,6 +193,28 @@ body {
   border-color: rgb(var(--ember));
   box-shadow: 0 0 0 3px rgb(var(--ember) / 0.18);
 }
+.panel-action-primary {
+  background: rgb(var(--ember));
+  border-color: rgb(var(--ember));
+  color: rgb(var(--bg));
+  font-weight: 600;
+}
+.panel-action-primary:hover {
+  background: rgb(var(--ember) / 0.92);
+  border-color: rgb(var(--ember) / 0.92);
+  color: rgb(var(--bg));
+}
+.panel-action-stop {
+  background: #d32f2f;
+  border-color: #d32f2f;
+  color: #fff;
+  font-weight: 600;
+}
+.panel-action-stop:hover {
+  background: #b71c1c;
+  border-color: #b71c1c;
+  color: #fff;
+}
 
 /* === Linha de código ============================================== */
 .code-line {

@@ -153,13 +153,30 @@ export default function App() {
             <span className="meta">
               {mode === "editing" ? "edição" : "execução"}
             </span>
-            {mode === "editing" && (
+            {mode === "editing" ? (
+              <>
+                <button
+                  onClick={formatarCodigo}
+                  className="panel-action"
+                  title="Formatar código (re-indentar)"
+                >
+                  Formatar
+                </button>
+                <button
+                  onClick={cozinhar}
+                  className="panel-action panel-action-primary"
+                  title="Executar o código"
+                >
+                  Executar
+                </button>
+              </>
+            ) : (
               <button
-                onClick={formatarCodigo}
-                className="panel-action"
-                title="Formatar código (re-indentar)"
+                onClick={voltarEditar}
+                className="panel-action panel-action-stop"
+                title="Voltar para edição"
               >
-                Formatar
+                ■ Parar
               </button>
             )}
           </div>
@@ -293,15 +310,6 @@ function Header({
         >
           {theme === "dark" ? "☀" : "☾"}
         </button>
-        {mode === "editing" ? (
-          <button onClick={onCozinhar} className="btn btn-primary">
-            Executar
-          </button>
-        ) : (
-          <button onClick={onEditar} className="btn">
-            Editar
-          </button>
-        )}
       </div>
     </header>
   );
