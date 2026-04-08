@@ -487,6 +487,44 @@ class Interpreter {
     if (name === 'scanner.nextFloat' || name === 'scanner.nextDouble')
       return this.execScannerNext(line, 'f');
     if (name === 'scanner.close') return 0;
+    // ===== Built-ins JavaScript =====
+    if (name === 'console.log') return this.execConsoleLog(args, scope, line);
+    if (name === 'prompt') return this.execPrompt(args, scope, line);
+    if (name === 'parseInt') return this.execParseInt(args, scope, line);
+    if (name === 'parseFloat') return this.execParseFloat(args, scope, line);
+    if (name === 'Math.floor') {
+      const v = this.evalExpr(args[0], scope);
+      return Math.floor(v);
+    }
+    if (name === 'Math.ceil') {
+      const v = this.evalExpr(args[0], scope);
+      return Math.ceil(v);
+    }
+    if (name === 'Math.round') {
+      const v = this.evalExpr(args[0], scope);
+      return Math.round(v);
+    }
+    if (name === 'Math.abs') {
+      const v = this.evalExpr(args[0], scope);
+      return Math.abs(v);
+    }
+    if (name === 'Math.max') {
+      const vals = args.map(a => this.evalExpr(a, scope));
+      return Math.max(...vals);
+    }
+    if (name === 'Math.min') {
+      const vals = args.map(a => this.evalExpr(a, scope));
+      return Math.min(...vals);
+    }
+    if (name === 'Math.sqrt') {
+      const v = this.evalExpr(args[0], scope);
+      return Math.sqrt(v);
+    }
+    if (name === 'Math.pow') {
+      const base = this.evalExpr(args[0], scope);
+      const exp = this.evalExpr(args[1], scope);
+      return Math.pow(base, exp);
+    }
     // ===== Funções do usuário =====
     const fn = this.functions.get(name);
     if (!fn) throw new RuntimeError(`Função '${name}' não definida`, line);
@@ -699,6 +737,69 @@ class Interpreter {
     }
     this.output += tok + '\n';
     return value;
+  }
+
+  // ===== Built-ins JavaScript =====
+
+  /** console.log — imprime args separados por espaço + \n. */
+  execConsoleLog(args: Expr[], scope: Scope, line: number): number {
+    const parts: string[] = [];
+    for (const arg of args) {
+      const v = this.evalExpr(arg, scope);
+      if (this.stringTable.has(v) && arg.kind === 'StringLit') {
+        parts.push(this.stringTable.get(v)!);
+      } else if (Number.isInteger(v)) {
+        parts.push(String(Math.trunc(v)));
+      } else {
+        parts.push(Number(v).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''));
+      }
+    }
+    const out = parts.join(' ') + '\n';
+    this.output += out;
+    return out.length;
+  }
+
+  /** prompt — lê entrada do usuário, retorna endereço de string na memória. */
+  execPrompt(args: Expr[], scope: Scope, line: number): number {
+    let promptMsg = 'Entrada para prompt()';
+    if (args.length > 0) {
+      const v = this.evalExpr(args[0], scope);
+      if (this.stringTable.has(v)) {
+        promptMsg = this.stringTable.get(v)!;
+      }
+    }
+    const tok = this.nextInputToken(promptMsg, line, 's');
+    this.output += tok + '\n';
+    // Aloca a string na memória e retorna o endereço.
+    const addr = this.memory.allocLogical(tok.length + 1);
+    for (let i = 0; i < tok.length; i++) this.memory.write(addr + i, tok.charCodeAt(i));
+    this.memory.write(addr + tok.length, 0);
+    this.stringTable.set(addr, tok);
+    return addr;
+  }
+
+  /** parseInt — converte string ou número para inteiro. */
+  execParseInt(args: Expr[], scope: Scope, line: number): number {
+    const v = this.evalExpr(args[0], scope);
+    if (this.stringTable.has(v)) {
+      const s = this.stringTable.get(v)!;
+      const n = parseInt(s, 10);
+      if (Number.isNaN(n)) throw new RuntimeError(`parseInt: valor inválido '${s}'`, line);
+      return n;
+    }
+    return Math.trunc(v);
+  }
+
+  /** parseFloat — converte string ou número para float. */
+  execParseFloat(args: Expr[], scope: Scope, line: number): number {
+    const v = this.evalExpr(args[0], scope);
+    if (this.stringTable.has(v)) {
+      const s = this.stringTable.get(v)!;
+      const n = parseFloat(s);
+      if (Number.isNaN(n)) throw new RuntimeError(`parseFloat: valor inválido '${s}'`, line);
+      return n;
+    }
+    return v;
   }
 
   // ===== Snapshot do escopo =====
