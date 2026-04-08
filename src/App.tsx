@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { compileAndRun } from "./interpreter";
 import type { Step } from "./interpreter";
 import { getLanguage, getAllLanguages } from "./languages";
@@ -13,6 +13,80 @@ import { TerminalPanel } from "./components/TerminalPanel";
 
 type Mode = "editing" | "running";
 type Theme = "dark" | "light";
+
+// ---------- Layout persistido ----------
+interface LayoutConfig {
+  colLeft: number;   // fração da largura para coluna esquerda (0-1)
+  colRight: number;  // fração da largura para coluna direita (0-1)
+  midSplit: number;  // fração vertical da coluna central (topo, 0-1)
+  rightSplit: number; // fração vertical da coluna direita (topo, 0-1)
+}
+
+const DEFAULT_LAYOUT: LayoutConfig = {
+  colLeft: 0.333,
+  colRight: 0.25,
+  midSplit: 0.45,
+  rightSplit: 0.42,
+};
+
+const LAYOUT_KEY = "almocar.layout";
+
+function loadLayout(): LayoutConfig {
+  try {
+    const raw = localStorage.getItem(LAYOUT_KEY);
+    if (raw) return { ...DEFAULT_LAYOUT, ...JSON.parse(raw) };
+  } catch {}
+  return { ...DEFAULT_LAYOUT };
+}
+function saveLayout(l: LayoutConfig) {
+  localStorage.setItem(LAYOUT_KEY, JSON.stringify(l));
+}
+
+function DragDivider({
+  direction,
+  onDrag,
+}: {
+  direction: "col" | "row";
+  onDrag: (delta: number, total: number) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const onMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      const startPos = direction === "col" ? e.clientX : e.clientY;
+      const parent = ref.current?.parentElement;
+      if (!parent) return;
+      const total =
+        direction === "col" ? parent.offsetWidth : parent.offsetHeight;
+
+      const onMove = (ev: MouseEvent) => {
+        const cur = direction === "col" ? ev.clientX : ev.clientY;
+        onDrag(cur - startPos, total);
+      };
+      const onUp = () => {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      };
+      document.body.style.cursor =
+        direction === "col" ? "col-resize" : "row-resize";
+      document.body.style.userSelect = "none";
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    },
+    [direction, onDrag],
+  );
+
+  return (
+    <div
+      ref={ref}
+      className={`drag-divider drag-divider-${direction}`}
+      onMouseDown={onMouseDown}
+    />
+  );
+}
 
 export default function App() {
   const [exampleKey, setExampleKey] = useState<string>(() => Object.keys(getLanguage("c").examples)[0]);
@@ -33,6 +107,20 @@ export default function App() {
   const [waitingForInput, setWaitingForInput] = useState(false);
   const [inputConv, setInputConv] = useState("");
   const playRef = useRef<number | null>(null);
+  const [layout, setLayout] = useState<LayoutConfig>(loadLayout);
+
+  function updateLayout(patch: Partial<LayoutConfig>) {
+    setLayout((prev) => {
+      const next = { ...prev, ...patch };
+      saveLayout(next);
+      return next;
+    });
+  }
+
+  function resetLayout() {
+    setLayout({ ...DEFAULT_LAYOUT });
+    saveLayout({ ...DEFAULT_LAYOUT });
+  }
 
   // Aplica o tema na raiz do documento.
   useEffect(() => {
@@ -214,6 +302,7 @@ export default function App() {
         language={lang}
         onLanguageChange={handleLanguageChange}
         onAbout={() => setAboutOpen(true)}
+        onResetLayout={resetLayout}
       />
       {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
 
@@ -226,9 +315,9 @@ export default function App() {
         />
       </div>
 
-      <main className="flex-1 grid gap-3 px-6 pb-3 grid-cols-12 min-h-0">
+      <main className="flex-1 flex gap-0 px-6 pb-3 min-h-0">
         {/* I — Código */}
-        <section className="col-span-12 lg:col-span-4 panel flex flex-col min-h-0">
+        <section className="panel flex flex-col min-h-0" style={{ width: `${layout.colLeft * 100}%`, minWidth: 200 }}>
           <div className="panel-title">
             <span className="chapter">I</span>
             <span className="label">Código</span>
@@ -278,14 +367,22 @@ export default function App() {
           </div>
         </section>
 
+        {/* Divider left|center */}
+        <DragDivider direction="col" onDrag={(delta, total) => {
+          updateLayout({ colLeft: Math.min(0.6, Math.max(0.15, layout.colLeft + delta / total)) });
+        }} />
+
         {/* II — Estruturas  +  III — Terminal */}
-        <section className="col-span-12 lg:col-span-5 flex flex-col gap-3 min-h-0">
+        <section className="flex flex-col gap-0 min-h-0" style={{ width: `${(1 - layout.colLeft - layout.colRight) * 100}%`, minWidth: 200 }}>
           <div
-            className="flex-shrink min-h-0 flex"
-            style={{ maxHeight: "55%" }}
+            className="flex-shrink-0 min-h-0 flex"
+            style={{ height: `${layout.midSplit * 100}%`, minHeight: 60 }}
           >
             <ArrayView vars={current?.scope ?? []} />
           </div>
+          <DragDivider direction="row" onDrag={(delta, total) => {
+            updateLayout({ midSplit: Math.min(0.8, Math.max(0.15, layout.midSplit + delta / total)) });
+          }} />
           <div className="flex-1 min-h-0">
             <TerminalPanel
               output={current?.output ?? ""}
@@ -298,12 +395,20 @@ export default function App() {
           </div>
         </section>
 
+        {/* Divider center|right */}
+        <DragDivider direction="col" onDrag={(delta, total) => {
+          updateLayout({ colRight: Math.min(0.5, Math.max(0.12, layout.colRight - delta / total)) });
+        }} />
+
         {/* IV — Variáveis  +  V — Trace */}
-        <section className="col-span-12 lg:col-span-3 flex flex-col gap-3 min-h-0">
-          <div className="flex-1 min-h-0">
+        <section className="flex flex-col gap-0 min-h-0" style={{ width: `${layout.colRight * 100}%`, minWidth: 150 }}>
+          <div className="flex-shrink-0 min-h-0" style={{ height: `${layout.rightSplit * 100}%`, minHeight: 60 }}>
             <VariablesPanel vars={current?.scope ?? []} />
           </div>
-          <div className="flex-[1.4] min-h-0">
+          <DragDivider direction="row" onDrag={(delta, total) => {
+            updateLayout({ rightSplit: Math.min(0.8, Math.max(0.15, layout.rightSplit + delta / total)) });
+          }} />
+          <div className="flex-1 min-h-0">
             <TraceLog
               steps={visSteps}
               current={visStepIndex}
@@ -347,6 +452,7 @@ function Header({
   language,
   onLanguageChange,
   onAbout,
+  onResetLayout,
 }: {
   exampleKey: string;
   onExample: (k: string) => void;
@@ -358,6 +464,7 @@ function Header({
   language: Language;
   onLanguageChange: (l: string) => void;
   onAbout: () => void;
+  onResetLayout: () => void;
 }) {
   const allLanguages = getAllLanguages();
   return (
@@ -410,6 +517,13 @@ function Header({
           }
         >
           {theme === "dark" ? "☀" : "☾"}
+        </button>
+        <button
+          onClick={onResetLayout}
+          className="btn btn-icon"
+          title="Resetar layout dos painéis"
+        >
+          ⟲
         </button>
       </div>
     </header>

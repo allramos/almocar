@@ -228,6 +228,49 @@ code, pre, .code-overlay, .code-input,
   color: #fff;
 }
 
+/* === Drag divider (redimensionamento de painéis) ================== */
+.drag-divider {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  background: transparent;
+  transition: background 0.15s;
+}
+.drag-divider::after {
+  content: '';
+  position: absolute;
+  border-radius: 2px;
+  background: rgb(var(--bg-crust));
+  transition: background 0.15s;
+}
+.drag-divider:hover::after {
+  background: rgb(var(--ember));
+}
+
+.drag-divider-col {
+  width: 12px;
+  cursor: col-resize;
+}
+.drag-divider-col::after {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 36px;
+}
+
+.drag-divider-row {
+  height: 12px;
+  cursor: row-resize;
+}
+.drag-divider-row::after {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  height: 3px;
+  width: 36px;
+}
+
 /* === Linha de código ============================================== */
 .code-line {
   display: flex;
