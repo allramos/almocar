@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { compileAndRun, Step } from "./interpreter";
-import { examples } from "./examples/matriz";
+import { compileAndRun } from "./interpreter";
+import type { Step } from "./interpreter";
+import { getLanguage, getAllLanguages } from "./languages";
+import type { Language } from "./languages";
 import { CodeView } from "./components/CodeView";
 import { VariablesPanel } from "./components/VariablesPanel";
 import { ArrayView } from "./components/ArrayView";
@@ -8,14 +10,13 @@ import { Controls } from "./components/Controls";
 import { Mascot } from "./components/Mascot";
 import { TraceLog } from "./components/TraceLog";
 import { TerminalPanel } from "./components/TerminalPanel";
-import { formatC } from "./formatC";
 
 type Mode = "editing" | "running";
 type Theme = "dark" | "light";
 
 export default function App() {
-  const [exampleKey, setExampleKey] = useState<string>("matriz");
-  const [source, setSource] = useState<string>(examples.matriz.code);
+  const [exampleKey, setExampleKey] = useState<string>(() => Object.keys(getLanguage("c").examples)[0]);
+  const [source, setSource] = useState<string>(() => Object.values(getLanguage("c").examples)[0].code);
   const [mode, setMode] = useState<Mode>("editing");
   const [steps, setSteps] = useState<Step[]>([]);
   const [stepIndex, setStepIndex] = useState(0);
@@ -25,7 +26,8 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem("almocar.theme") as Theme) ?? "dark",
   );
-  const [language, setLanguage] = useState<string>("c");
+  const [languageId, setLanguageId] = useState<string>("c");
+  const lang: Language = useMemo(() => getLanguage(languageId), [languageId]);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [collectedInputs, setCollectedInputs] = useState<string[]>([]);
   const [waitingForInput, setWaitingForInput] = useState(false);
@@ -85,7 +87,7 @@ export default function App() {
   }
 
   function executeWith(inputs: string[], jumpToEnd = false) {
-    const result = compileAndRun(source, {
+    const result = compileAndRun(source, lang, {
       inputs: inputs.join(" "),
       requestMoreInput: () => null,
     });
@@ -126,7 +128,7 @@ export default function App() {
   }
 
   function formatarCodigo() {
-    setSource((s) => formatC(s));
+    setSource((s) => lang.format(s));
   }
 
   // Atalhos globais: ←/→ navegam entre passos durante a execução.
@@ -168,7 +170,22 @@ export default function App() {
 
   function loadExample(key: string) {
     setExampleKey(key);
-    setSource(examples[key].code);
+    setSource(lang.examples[key].code);
+    setMode("editing");
+    setSteps([]);
+    setStepIndex(0);
+    setError(null);
+    setCollectedInputs([]);
+    setWaitingForInput(false);
+    setInputConv("");
+  }
+
+  function handleLanguageChange(newLangId: string) {
+    const newLang = getLanguage(newLangId);
+    setLanguageId(newLangId);
+    const firstKey = Object.keys(newLang.examples)[0];
+    setExampleKey(firstKey);
+    setSource(newLang.examples[firstKey].code);
     setMode("editing");
     setSteps([]);
     setStepIndex(0);
@@ -191,8 +208,8 @@ export default function App() {
         mode={mode}
         theme={theme}
         onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-        language={language}
-        onLanguageChange={setLanguage}
+        language={lang}
+        onLanguageChange={handleLanguageChange}
         onAbout={() => setAboutOpen(true)}
       />
       {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
@@ -253,6 +270,7 @@ export default function App() {
                 if (error) setError(null);
               }}
               onFormat={formatarCodigo}
+              highlight={lang.highlight}
             />
           </div>
         </section>
@@ -334,10 +352,11 @@ function Header({
   mode: Mode;
   theme: Theme;
   onToggleTheme: () => void;
-  language: string;
+  language: Language;
   onLanguageChange: (l: string) => void;
   onAbout: () => void;
 }) {
+  const allLanguages = getAllLanguages();
   return (
     <header className="px-6 pt-5 pb-4 flex items-baseline gap-6 border-b border-bg-crust">
       <h1 className="wordmark select-none">
@@ -355,12 +374,16 @@ function Header({
 
       <div className="flex items-center gap-2">
         <select
-          value={language}
+          value={language.id}
           onChange={(e) => onLanguageChange(e.target.value)}
           className="menu-select"
           title="Linguagem"
         >
-          <option value="c">C</option>
+          {allLanguages.map((lang) => (
+            <option key={lang.id} value={lang.id}>
+              {lang.name}
+            </option>
+          ))}
         </select>
         <select
           value={exampleKey}
@@ -368,7 +391,7 @@ function Header({
           className="menu-select min-w-[200px]"
           title="Exemplo"
         >
-          {Object.entries(examples).map(([k, v]) => (
+          {Object.entries(language.examples).map(([k, v]) => (
             <option key={k} value={k}>
               {v.name}
             </option>

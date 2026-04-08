@@ -463,6 +463,7 @@ class Interpreter {
   stringTable = new Map<number, string>();
 
   evalCall(name: string, args: Expr[], scope: Scope, line: number): number {
+    // ===== Built-ins C =====
     if (name === 'printf') return this.execPrintf(args, scope, line);
     if (name === 'scanf') return this.execScanf(args, scope, line);
     if (name === 'putchar') {
@@ -476,6 +477,10 @@ class Interpreter {
       this.output += s + '\n';
       return s.length + 1;
     }
+    // ===== Built-ins Portugol =====
+    if (name === 'escreva' || name === 'escreval') return this.execEscreva(args, scope, line, name === 'escreval');
+    if (name === 'leia') return this.execLeia(args, scope, line);
+    // ===== Funções do usuário =====
     const fn = this.functions.get(name);
     if (!fn) throw new RuntimeError(`Função '${name}' não definida`, line);
     const argVals = args.map(a => this.evalExpr(a, scope));
@@ -599,6 +604,54 @@ class Interpreter {
       read++;
     }
     // Ecoa as entradas na saída para que o aluno veja os valores lidos no painel.
+    if (echo.length > 0) this.output += echo + '\n';
+    return read;
+  }
+
+  // ===== Built-ins Portugol =====
+
+  /** escreva(arg1, arg2, ...) — imprime cada argumento concatenado. escreval adiciona \n. */
+  execEscreva(args: Expr[], scope: Scope, line: number, newline: boolean): number {
+    let out = '';
+    for (const arg of args) {
+      const v = this.evalExpr(arg, scope);
+      // Se o valor é um endereço de string na tabela, imprime a string.
+      if (this.stringTable.has(v) && arg.kind === 'StringLit') {
+        out += this.stringTable.get(v)!;
+      } else if (Number.isInteger(v)) {
+        out += String(Math.trunc(v));
+      } else {
+        out += Number(v).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+      }
+    }
+    if (newline) out += '\n';
+    this.output += out;
+    return out.length;
+  }
+
+  /** leia(var1, var2, ...) — lê valores do teclado para as variáveis. */
+  execLeia(args: Expr[], scope: Scope, line: number): number {
+    let read = 0;
+    let echo = '';
+    for (let i = 0; i < args.length; i++) {
+      const lv = this.evalLValue(args[i], scope);
+      const promptMsg = `Entrada para leia() — valor #${read + 1}`;
+      // Detecta o tipo para conversão adequada.
+      const isFloat = lv.type.kind === 'float';
+      const conv = isFloat ? 'f' : 'd';
+      const tok = this.nextInputToken(promptMsg, line, conv);
+      let value: number;
+      if (isFloat) {
+        value = parseFloat(tok);
+        if (Number.isNaN(value)) throw new RuntimeError(`leia: valor real inválido '${tok}'`, line);
+      } else {
+        value = parseInt(tok, 10);
+        if (Number.isNaN(value)) throw new RuntimeError(`leia: valor inteiro inválido '${tok}'`, line);
+      }
+      this.memory.write(lv.address, value);
+      echo += (echo ? ' ' : '') + tok;
+      read++;
+    }
     if (echo.length > 0) this.output += echo + '\n';
     return read;
   }

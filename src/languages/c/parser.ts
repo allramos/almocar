@@ -3,8 +3,8 @@
 import { Token, tokenize } from './lexer';
 import {
   Program, FunctionDecl, Param, Stmt, Expr, BlockStmt, VarDecl, Initializer, DeclStmt,
-} from './ast';
-import { CType, tInt, tFloat, tChar, tVoid, tPtr } from './types';
+} from '../../interpreter/ast';
+import { CType, tInt, tFloat, tChar, tVoid, tPtr } from '../../interpreter/types';
 
 export function parse(source: string): Program {
   const tokens = tokenize(source);

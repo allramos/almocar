@@ -8,17 +8,20 @@
 **A**lgorítmico **R**esponsivo.
 
 ALMOÇAR é um software web que ajuda alunos a entender, passo a passo, como
-algoritmos em C são executados. Ele recebe o código, mostra a memória, as
-variáveis e as estruturas de dados em painéis coordenados e permite ao aluno
+algoritmos são executados. Ele recebe o código (C ou Portugol), mostra a memória,
+as variáveis e as estruturas de dados em painéis coordenados e permite ao aluno
 avançar/retroceder cada instrução como em um teste de mesa interativo.
 
 ---
 
 ## O que está pronto
 
-### Interpretador de C (subset didático)
+### Linguagens suportadas
 
-Escrito do zero em TypeScript, sem dependências externas:
+Arquitetura multi-linguagem com núcleo compartilhado (AST, memória,
+interpretador) e front-ends independentes por linguagem:
+
+#### C (subset didático)
 
 - **Tipos:** `int`, `float`, `char`, `void`, ponteiros, arrays multidimensionais.
 - **Controle de fluxo:** `if/else`, `for`, `while`, `do/while`, `switch/case`,
@@ -32,6 +35,16 @@ Escrito do zero em TypeScript, sem dependências externas:
 - **Pré-processador:** `#define` (macros tipo-objeto com expansão recursiva).
 - **Execução interativa:** `scanf` pausa a execução e solicita entrada no
   terminal integrado, valor por valor, como em um IDE real.
+
+#### Portugol Studio
+
+- **Tipos:** `inteiro`, `real`, `caractere`, `logico`, `cadeia`.
+- **Controle de fluxo:** `se/senao`, `para`, `enquanto`, `faca...enquanto`,
+  `escolha/caso/contrario`, `pare`, `continue`, `retorne`.
+- **Operadores:** aritméticos, relacionais, `e`/`ou`/`nao` (lógicos em português),
+  `verdadeiro`/`falso`, atribuição composta.
+- **Built-ins:** `escreva()`, `escreval()` (com quebra de linha), `leia()`.
+- **Estrutura:** `programa { funcao inicio() { ... } }` — ponto-e-vírgula opcional.
 
 ### Interface
 
@@ -71,14 +84,21 @@ Escrito do zero em TypeScript, sem dependências externas:
 
 ### Formatador de código
 
-Formatador C minimalista (`formatC.ts`) que normaliza indentação por chaves,
-preserva strings/comentários e trata `case/default` com recuo adequado.
+Formatador minimalista por linguagem que normaliza indentação por chaves,
+preserva strings/comentários e trata `case/default` (C) ou `caso/contrario`
+(Portugol) com recuo adequado.
 
 ### Exemplos pré-carregados
 
-- **Matriz 3×5** — encontrar menor e maior valor.
-- **Soma de vetor** — acumulador com laço `for`.
-- **Ponteiro básico** — atribuição via ponteiro.
+**C:**
+- Matriz 3×5 — encontrar menor e maior valor.
+- Soma de vetor — acumulador com laço `for`.
+- Ponteiro básico — atribuição via ponteiro.
+
+**Portugol:**
+- Soma de vetor — acumulador com `para`.
+- Matriz 3×5 — menor e maior com `para` aninhado.
+- Leitura com se/senão — par ou ímpar com `leia()`.
 
 ---
 
@@ -113,38 +133,51 @@ almocar/
 ├── vite.config.ts
 └── src/
     ├── main.tsx
-    ├── App.tsx                  # Layout e estado global da UI
-    ├── formatC.ts               # Formatador C (re-indentação)
-    ├── index.css                # Design tokens e estilos
-    ├── interpreter/             # Núcleo: lexer + parser + interpretador
-    │   ├── ast.ts               # Definição da AST
-    │   ├── index.ts             # API pública (compileAndRun)
-    │   ├── interpreter.ts       # Tree-walking + gravação de Steps
-    │   ├── lexer.ts             # Tokenizador com suporte a #define
-    │   ├── memory.ts            # Modelo de memória plano
-    │   ├── parser.ts            # Parser recursivo descendente
-    │   └── types.ts             # Tipos (Step, VarSnapshot, CType)
-    ├── components/
-    │   ├── ArrayView.tsx        # Vetores e matrizes desenhados
-    │   ├── CodeView.tsx         # Editor / visualizador com tokenizer
-    │   ├── Controls.tsx         # ▶ ⏸ ⏮ ◀ ▶ + slider + velocidade
-    │   ├── Mascot.tsx           # Barra de status com 4 estados
-    │   ├── TerminalPanel.tsx    # Terminal unificado (stdin + stdout)
-    │   ├── TraceLog.tsx         # Lista clicável de passos
-    │   └── VariablesPanel.tsx   # Escalares com destaque
-    └── examples/
-        └── matriz.ts            # Exemplos pré-carregados
+    ├── App.tsx                      # Layout e estado global da UI
+    ├── index.css                    # Design tokens e estilos
+    ├── interpreter/                 # Núcleo compartilhado
+    │   ├── ast.ts                   # Definição da AST (comum a todas as linguagens)
+    │   ├── index.ts                 # API pública (compileAndRun)
+    │   ├── interpreter.ts           # Tree-walking + gravação de Steps
+    │   ├── memory.ts                # Modelo de memória plano
+    │   └── types.ts                 # Tipos (Step, VarSnapshot, CType)
+    ├── languages/                   # Front-ends por linguagem
+    │   ├── types.ts                 # Interface Language
+    │   ├── index.ts                 # Registro de linguagens
+    │   ├── c/                       # Linguagem C
+    │   │   ├── lexer.ts             # Tokenizador com #define
+    │   │   ├── parser.ts            # Parser recursivo descendente
+    │   │   ├── formatter.ts         # Re-indentação por chaves
+    │   │   ├── highlight.ts         # Syntax highlighting
+    │   │   ├── examples.ts          # Exemplos pré-carregados
+    │   │   └── index.ts
+    │   └── portugol/                # Linguagem Portugol Studio
+    │       ├── lexer.ts             # Tokenizador com e/ou/nao
+    │       ├── parser.ts            # Parser: programa { funcao inicio() }
+    │       ├── formatter.ts         # Re-indentação por chaves
+    │       ├── highlight.ts         # Syntax highlighting
+    │       ├── examples.ts          # Exemplos pré-carregados
+    │       └── index.ts
+    └── components/
+        ├── ArrayView.tsx            # Vetores e matrizes desenhados
+        ├── CodeView.tsx             # Editor / visualizador de código
+        ├── Controls.tsx             # ▶ ⏸ ⏮ ◀ ▶ + slider + velocidade
+        ├── Mascot.tsx               # Barra de status com 4 estados
+        ├── TerminalPanel.tsx        # Terminal unificado (stdin + stdout)
+        ├── TraceLog.tsx             # Lista clicável de passos
+        └── VariablesPanel.tsx       # Escalares com destaque
 ```
 
 ---
 
 ## Como o interpretador funciona
 
-1. **Lexer** (`lexer.ts`) tokeniza o fonte em palavras-chave, identificadores,
-   números, strings, pontuação e operadores. Suporta `#define` com expansão
-   recursiva de macros. Comentários e `#include` são descartados.
-2. **Parser** (`parser.ts`) é recursivo descendente e produz uma AST tipada
-   (definida em `ast.ts`). Toda a precedência usual de C é respeitada.
+1. **Lexer** (por linguagem) tokeniza o fonte em palavras-chave, identificadores,
+   números, strings, pontuação e operadores. O lexer C suporta `#define` com
+   expansão recursiva de macros; o Portugol converte `e`/`ou`/`nao` em operadores.
+2. **Parser** (por linguagem) é recursivo descendente e produz uma **AST
+   compartilhada** (definida em `ast.ts`). O parser Portugol renomeia
+   `inicio` → `main` e mapeia tipos (`inteiro` → `int`, `real` → `float`, etc.).
 3. **Memória** (`memory.ts`) é um vetor plano de células lógicas. Cada
    variável escalar ocupa 1 célula; arrays ocupam `n` células contíguas.
    Ponteiros guardam endereços (índices nesse vetor).
@@ -155,8 +188,10 @@ almocar/
    - snapshot completo do escopo (variáveis e arrays);
    - stdout acumulada;
    - "foco" (qual variável/célula está sendo lida ou escrita).
-5. **Entrada interativa:** quando o interpretador encontra `scanf`, lança
-   um `InputNeededSignal`. A UI coleta o valor no terminal integrado e
+   O interpretador reconhece built-ins de ambas as linguagens:
+   `printf`/`scanf`/`putchar`/`puts` (C) e `escreva`/`escreval`/`leia` (Portugol).
+5. **Entrada interativa:** quando o interpretador encontra `scanf` ou `leia`,
+   lança um `InputNeededSignal`. A UI coleta o valor no terminal integrado e
    re-executa deterministicamente com todas as entradas acumuladas.
 6. A UI consome a lista de `Step[]` e renderiza o passo selecionado —
    toda a navegação é instantânea, sem re-executar.
@@ -164,12 +199,25 @@ almocar/
 Limite de segurança: a execução para após **5000 passos** para evitar
 travar a interface em caso de laço infinito.
 
+### Adicionando novas linguagens
+
+Para adicionar uma linguagem, crie um diretório em `src/languages/<nome>/`
+implementando a interface `Language` (definida em `src/languages/types.ts`):
+
+- `parse(source)` → AST compartilhada
+- `format(source)` → código re-indentado
+- `highlight` → configuração de syntax highlighting
+- `examples` → exemplos pré-carregados
+
+Registre a linguagem em `src/languages/index.ts` e ela aparecerá
+automaticamente no seletor da interface.
+
 ---
 
 ## Próximos passos sugeridos
 
-- Suporte a `struct`, `typedef`, `malloc`/`free`.
-- Outras linguagens: Python (subset), Pascal e pseudocódigo Portugol.
+- Suporte a `struct`, `typedef`, `malloc`/`free` (C).
+- Novas linguagens: Python (subset), Pascal.
 - Modo professor com biblioteca de exercícios.
 - Compartilhar execução por URL.
 

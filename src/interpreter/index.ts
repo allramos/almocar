@@ -1,14 +1,13 @@
-export { parse } from './parser';
 export { run, RuntimeError } from './interpreter';
 export type { RunResult, RunOptions } from './interpreter';
 export type { Step, VarSnapshot, CellSnapshot } from './types';
 
-import { parse } from './parser';
 import { run, RunResult, RunOptions } from './interpreter';
+import type { Language } from '../languages/types';
 
-export function compileAndRun(source: string, options: RunOptions = {}): RunResult {
+export function compileAndRun(source: string, language: Language, options: RunOptions = {}): RunResult {
   try {
-    const program = parse(source);
+    const program = language.parse(source);
     return run(program, options);
   } catch (e: any) {
     const msg = e?.message ?? String(e);
