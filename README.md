@@ -39,6 +39,29 @@ interpretador) e front-ends independentes por linguagem:
 - **Execução interativa:** `scanf` pausa a execução e solicita entrada no
   terminal integrado, valor por valor, como em um IDE real.
 
+#### Java (subset didático)
+
+- **Tipos:** `int`, `float`, `double`, `char`, `void`, `boolean`, `String`, arrays.
+- **Controle de fluxo:** `if/else`, `for`, `while`, `do/while`, `break`, `continue`, `return`.
+- **Operadores:** mesmos do C, incluindo cast (`(int)`, `(double)`).
+- **Built-ins:** `System.out.println()`, `System.out.print()`,
+  `scanner.nextInt()`, `scanner.nextFloat()`.
+- **Estrutura:** `public class Main { public static void main(String[] args) { ... } }` —
+  pula `import`, `package`, declarações de `Scanner`, modificadores de acesso.
+
+#### JavaScript (subset didático)
+
+- **Declarações:** `let`, `const`, `var` com inferência automática de tipo.
+- **Controle de fluxo:** `if/else`, `for`, `while`, `do/while`, `break`, `continue`, `return`.
+- **Operadores:** aritméticos, relacionais, lógicos, bit-a-bit, atribuição composta,
+  pré/pós incremento/decremento, ternário.
+- **Funções** declaradas com `function`; statements top-level executam como `main`.
+- **Built-ins:** `console.log()`, `prompt()`, `parseInt()`, `parseFloat()`,
+  `Math.floor()`, `Math.ceil()`, `Math.round()`, `Math.abs()`, `Math.max()`,
+  `Math.min()`, `Math.sqrt()`, `Math.pow()`.
+- **Arrays:** literais `[1, 2, 3]` e matrizes `[[1,2],[3,4]]`.
+- **Strings:** aspas duplas, simples e template literals (backtick).
+
 #### Portugol Studio
 
 - **Tipos:** `inteiro`, `real`, `caractere`, `logico`, `cadeia`.
@@ -67,6 +90,8 @@ interpretador) e front-ends independentes por linguagem:
   mensagem do passo atual e contador de progresso.
 - **Destaque de erros:** erros de compilação mantêm o editor aberto, destacam a linha
   com erro (sublinhado ondulado + fundo vinho), e a barra de status fica em amarelo/vinho.
+- **Controle de tamanho da fonte** no editor com botões A−/A+ e persistência
+  via `localStorage`.
 
 ### Controles de execução
 
@@ -83,6 +108,7 @@ interpretador) e front-ends independentes por linguagem:
 | `Alt+↑/↓` | Mover linha(s) |
 | `Shift+Alt+↑/↓` | Copiar/duplicar linha(s) |
 | `Ctrl+Shift+K` | Remover linha(s) |
+| `Ctrl+;` | Comentar / descomentar linha(s) |
 | `←` / `→` | Passo anterior / próximo (em execução) |
 
 ### Formatador de código
@@ -97,6 +123,16 @@ preserva strings/comentários e trata `case/default` (C) ou `caso/contrario`
 - Matriz 3×5 — encontrar menor e maior valor.
 - Soma de vetor — acumulador com laço `for`.
 - Ponteiro básico — atribuição via ponteiro.
+
+**Java:**
+- Soma de vetor — acumulador com `for`.
+- Matriz 3×5 — menor e maior com `for` aninhado.
+- Leitura com Scanner — par ou ímpar.
+
+**JavaScript:**
+- Soma de vetor — acumulador com `for`.
+- Matriz 3×5 — menor e maior com `for` aninhado.
+- Leitura com `prompt` — par ou ímpar.
 
 **Portugol:**
 - Soma de vetor — acumulador com `para`.
@@ -154,6 +190,20 @@ almocar/
     │   │   ├── highlight.ts         # Syntax highlighting
     │   │   ├── examples.ts          # Exemplos pré-carregados
     │   │   └── index.ts
+    │   ├── java/                    # Linguagem Java
+    │   │   ├── lexer.ts             # Tokenizador (pula import/package)
+    │   │   ├── parser.ts            # Parser: class → funções
+    │   │   ├── formatter.ts         # Re-indentação por chaves
+    │   │   ├── highlight.ts         # Syntax highlighting
+    │   │   ├── examples.ts          # Exemplos pré-carregados
+    │   │   └── index.ts
+    │   ├── javascript/              # Linguagem JavaScript
+    │   │   ├── lexer.ts             # Tokenizador (console.log, Math.*)
+    │   │   ├── parser.ts            # Parser: let/const/var, top-level → main
+    │   │   ├── formatter.ts         # Re-indentação por chaves
+    │   │   ├── highlight.ts         # Syntax highlighting
+    │   │   ├── examples.ts          # Exemplos pré-carregados
+    │   │   └── index.ts
     │   └── portugol/                # Linguagem Portugol Studio
     │       ├── lexer.ts             # Tokenizador com e/ou/nao
     │       ├── parser.ts            # Parser: programa { funcao inicio() }
@@ -191,8 +241,10 @@ almocar/
    - snapshot completo do escopo (variáveis e arrays);
    - stdout acumulada;
    - "foco" (qual variável/célula está sendo lida ou escrita).
-   O interpretador reconhece built-ins de ambas as linguagens:
-   `printf`/`scanf`/`putchar`/`puts` (C) e `escreva`/`escreval`/`leia` (Portugol).
+   O interpretador reconhece built-ins de todas as linguagens:
+   `printf`/`scanf`/`putchar`/`puts` (C), `System.out.println`/`System.out.print`/
+   `scanner.nextInt`/`scanner.nextFloat` (Java), `console.log`/`prompt`/
+   `parseInt`/`parseFloat`/`Math.*` (JavaScript) e `escreva`/`escreval`/`leia` (Portugol).
 5. **Entrada interativa:** quando o interpretador encontra `scanf` ou `leia`,
    lança um `InputNeededSignal`. A UI coleta o valor no terminal integrado e
    re-executa deterministicamente com todas as entradas acumuladas.
