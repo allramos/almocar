@@ -145,17 +145,39 @@ const PUNCT = new Set(['(',')','{','}','[',']',',',';',':','?']);
 const OP_CHARS = '+-*/%=<>!&|^~';
 
 function tokenizeC(source: string): Tok[][] {
-  return source.split('\n').map(tokenizeLine);
+  const lines = source.split('\n');
+  const result: Tok[][] = [];
+  let inBlockComment = false;
+  for (const line of lines) {
+    const [tokens, stillInComment] = tokenizeLine(line, inBlockComment);
+    result.push(tokens);
+    inBlockComment = stillInComment;
+  }
+  return result;
 }
 
-function tokenizeLine(line: string): Tok[] {
+function tokenizeLine(line: string, inBlockComment: boolean): [Tok[], boolean] {
   const out: Tok[] = [];
   let i = 0;
-  const trimmedStart = line.match(/^(\s*)(#.*)$/);
+
+  // Continuação de comentário de bloco de linhas anteriores
+  if (inBlockComment) {
+    const end = line.indexOf('*/', i);
+    if (end >= 0) {
+      out.push({ kind: 'cmt', text: line.slice(i, end + 2) });
+      i = end + 2;
+      inBlockComment = false;
+    } else {
+      out.push({ kind: 'cmt', text: line.slice(i) });
+      return [out, true];
+    }
+  }
+
+  const trimmedStart = line.slice(i).match(/^(\s*)(#.*)$/);
   if (trimmedStart) {
     if (trimmedStart[1]) out.push({ kind: 'ws', text: trimmedStart[1] });
     out.push({ kind: 'pre', text: trimmedStart[2] });
-    return out;
+    return [out, false];
   }
   while (i < line.length) {
     const c = line[i];
@@ -179,8 +201,7 @@ function tokenizeLine(line: string): Tok[] {
         continue;
       } else {
         out.push({ kind: 'cmt', text: line.slice(i) });
-        i = line.length;
-        continue;
+        return [out, true];
       }
     }
     if (c === '"') {
@@ -237,5 +258,5 @@ function tokenizeLine(line: string): Tok[] {
     out.push({ kind: 'id', text: c });
     i++;
   }
-  return out;
+  return [out, false];
 }
