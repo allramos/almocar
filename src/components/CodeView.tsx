@@ -29,6 +29,7 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
   // Tab / Shift+Tab → indentar / des-indentar
   // Ctrl+Shift+F → formatar código
   // Ctrl+Shift+K → remover linha(s)
+  // Ctrl+; → comentar/descomentar linha(s)
   // Alt+↑/↓ → mover linha(s)
   // Shift+Alt+↑/↓ → copiar linha(s)
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -59,6 +60,57 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
       requestAnimationFrame(() => {
         const pos = Math.min(lineStart, newText.length);
         ta.selectionStart = ta.selectionEnd = pos;
+      });
+      return;
+    }
+
+    // Ctrl+; → comentar/descomentar linha(s)
+    if ((e.ctrlKey || e.metaKey) && e.key === ';') {
+      e.preventDefault();
+      const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+      let lineEnd = value.indexOf('\n', end);
+      if (lineEnd < 0) lineEnd = value.length;
+      const block = value.slice(lineStart, lineEnd);
+      const lines = block.split('\n');
+      // Se todas as linhas (não-vazias) começam com "//", descomenta; senão, comenta.
+      const allCommented = lines.every(l => l.trimStart() === '' || l.trimStart().startsWith('//'));
+      let newBlock: string;
+      let firstDelta = 0;
+      let totalDelta = 0;
+      if (allCommented) {
+        // Descomentar: remove o primeiro "// " ou "//" de cada linha.
+        newBlock = lines.map((l, i) => {
+          const idx = l.indexOf('//');
+          if (idx < 0) return l;
+          const hasSpace = l[idx + 2] === ' ';
+          const removed = hasSpace ? 3 : 2;
+          if (i === 0) firstDelta = -removed;
+          totalDelta -= removed;
+          return l.slice(0, idx) + l.slice(idx + removed);
+        }).join('\n');
+      } else {
+        // Comentar: insere "// " após a indentação de cada linha.
+        // Calcula a menor indentação entre linhas não-vazias.
+        let minIndent = Infinity;
+        for (const l of lines) {
+          if (l.trim().length === 0) continue;
+          const indent = l.match(/^\s*/)?.[0].length ?? 0;
+          if (indent < minIndent) minIndent = indent;
+        }
+        if (!Number.isFinite(minIndent)) minIndent = 0;
+        newBlock = lines.map((l, i) => {
+          if (l.trim().length === 0) return l;
+          const result = l.slice(0, minIndent) + '// ' + l.slice(minIndent);
+          if (i === 0) firstDelta = 3;
+          totalDelta += 3;
+          return result;
+        }).join('\n');
+      }
+      const newText = value.slice(0, lineStart) + newBlock + value.slice(lineEnd);
+      onChange?.(newText);
+      requestAnimationFrame(() => {
+        ta.selectionStart = Math.max(lineStart, start + firstDelta);
+        ta.selectionEnd = Math.max(lineStart, end + totalDelta);
       });
       return;
     }
