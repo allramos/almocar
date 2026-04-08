@@ -192,11 +192,22 @@ export default function App() {
   const [fontSize, setFontSize] = useState<number>(
     () => Number(localStorage.getItem("almocar.fontSize")) || 12.5,
   );
+  const [arrayZoom, setArrayZoom] = useState<number>(
+    () => Number(localStorage.getItem("almocar.arrayZoom")) || 1,
+  );
 
   function changeFontSize(delta: number) {
     setFontSize((prev) => {
       const next = Math.min(24, Math.max(8, +(prev + delta).toFixed(1)));
       localStorage.setItem("almocar.fontSize", String(next));
+      return next;
+    });
+  }
+
+  function changeArrayZoom(delta: number) {
+    setArrayZoom((prev) => {
+      const next = Math.min(2, Math.max(0.5, +(prev + delta).toFixed(2)));
+      localStorage.setItem("almocar.arrayZoom", String(next));
       return next;
     });
   }
@@ -511,7 +522,7 @@ export default function App() {
             className="flex-shrink-0 min-h-0 flex"
             style={{ height: `${layout.midSplit * 100}%`, minHeight: 60 }}
           >
-            <ArrayView vars={current?.scope ?? []} />
+            <ArrayView vars={current?.scope ?? []} zoom={arrayZoom} onZoomChange={changeArrayZoom} />
           </div>
           <DragDivider direction="row" onDrag={(delta, total) => {
             updateLayout({ midSplit: Math.min(0.8, Math.max(0.15, layout.midSplit + delta / total)) });
@@ -524,6 +535,7 @@ export default function App() {
               }
               inputConv={inputConv}
               onSubmit={handleInputSubmit}
+              fontSize={fontSize}
             />
           </div>
         </section>
@@ -536,7 +548,7 @@ export default function App() {
         {/* IV — Variáveis  +  V — Trace */}
         <section className="flex flex-col gap-0 min-h-0" style={{ width: `${layout.colRight * 100}%`, minWidth: 150 }}>
           <div className="flex-shrink-0 min-h-0" style={{ height: `${layout.rightSplit * 100}%`, minHeight: 60 }}>
-            <VariablesPanel vars={current?.scope ?? []} />
+            <VariablesPanel vars={current?.scope ?? []} fontSize={fontSize} />
           </div>
           <DragDivider direction="row" onDrag={(delta, total) => {
             updateLayout({ rightSplit: Math.min(0.8, Math.max(0.15, layout.rightSplit + delta / total)) });
@@ -546,6 +558,7 @@ export default function App() {
               steps={visSteps}
               current={visStepIndex}
               onSelect={setStepIndex}
+              fontSize={fontSize}
             />
           </div>
         </section>

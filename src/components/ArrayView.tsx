@@ -3,9 +3,11 @@ import { VarSnapshot } from '../interpreter';
 
 interface Props {
   vars: VarSnapshot[];
+  zoom?: number;
+  onZoomChange?: (delta: number) => void;
 }
 
-export function ArrayView({ vars }: Props) {
+export function ArrayView({ vars, zoom = 1, onZoomChange }: Props) {
   const arrays = vars.filter(v => v.cells && v.shape && v.shape.length > 0);
 
   return (
@@ -14,8 +16,31 @@ export function ArrayView({ vars }: Props) {
         <span className="chapter">II</span>
         <span className="label">Estruturas</span>
         <span className="meta">{arrays.length} item{arrays.length === 1 ? '' : 's'}</span>
+        {onZoomChange && (
+          <span className="flex items-center gap-1 ml-auto">
+            <button
+              onClick={() => onZoomChange(-0.1)}
+              className="panel-action"
+              title="Diminuir zoom"
+              style={{ padding: '0 5px', minWidth: 0 }}
+            >
+              −
+            </button>
+            <span className="text-[10px] tabular-nums text-ink-mute" style={{ minWidth: 32, textAlign: 'center' }}>
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              onClick={() => onZoomChange(0.1)}
+              className="panel-action"
+              title="Aumentar zoom"
+              style={{ padding: '0 5px', minWidth: 0 }}
+            >
+              +
+            </button>
+          </span>
+        )}
       </div>
-      <div className="px-4 pb-4 pt-4 overflow-auto flex-1 space-y-5">
+      <div className="px-4 pb-4 pt-4 overflow-auto flex-1 space-y-5" style={{ zoom }}>
         {arrays.length === 0 && (
           <div className="text-ink-fade text-xs px-1 py-2 font-mono">
             Nenhum vetor ou matriz no escopo.

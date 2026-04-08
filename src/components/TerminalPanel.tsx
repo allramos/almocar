@@ -17,9 +17,10 @@ interface Props {
   waitingForInput: boolean;
   inputConv: string;
   onSubmit: (value: string) => void;
+  fontSize?: number;
 }
 
-export function TerminalPanel({ output, waitingForInput, inputConv, onSubmit }: Props) {
+export function TerminalPanel({ output, waitingForInput, inputConv, onSubmit, fontSize = 12.5 }: Props) {
   const [currentValue, setCurrentValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -70,6 +71,7 @@ export function TerminalPanel({ output, waitingForInput, inputConv, onSubmit }: 
         ref={scrollRef}
         className="term-body flex-1 min-h-0 overflow-auto"
         onClick={handleContainerClick}
+        style={{ fontSize: `${fontSize}px`, lineHeight: `${fontSize * 1.6}px` }}
       >
         {/* Saída acumulada do printf */}
         {output && <span className="term-output">{output}</span>}

@@ -5,14 +5,19 @@ interface Props {
   steps: Step[];
   current: number;
   onSelect: (i: number) => void;
+  fontSize?: number;
 }
 
-export function TraceLog({ steps, current, onSelect }: Props) {
+export function TraceLog({ steps, current, onSelect, fontSize = 12.5 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current?.querySelector(`[data-i="${current}"]`) as HTMLElement | null;
     el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [current]);
+
+  const numSz = `${fontSize - 2.5}px`;
+  const lineSz = `${fontSize - 2.5}px`;
+  const descSz = `${fontSize - 0.5}px`;
 
   return (
     <div className="panel flex flex-col h-full">
@@ -40,15 +45,16 @@ export function TraceLog({ steps, current, onSelect }: Props) {
                 ${active ? 'bg-ember/10' : 'hover:bg-bg-soft'}`}
             >
               <span
-                className={`font-mono tabular-nums text-[10px] min-w-[26px] text-right
+                className={`font-mono tabular-nums min-w-[26px] text-right
                   ${active ? 'text-ember' : isErr ? 'text-wine' : isOk ? 'text-herb' : 'text-ink-fade'}`}
+                style={{ fontSize: numSz }}
               >
                 {String(i + 1).padStart(2, '0')}
               </span>
-              <span className="text-ink-fade font-mono text-[10px] min-w-[24px]">
+              <span className="text-ink-fade font-mono min-w-[24px]" style={{ fontSize: lineSz }}>
                 L{s.line}
               </span>
-              <span className={`text-[12px] leading-snug flex-1 font-mono ${active ? 'text-ink' : 'text-ink-dim'}`}>
+              <span className={`leading-snug flex-1 font-mono ${active ? 'text-ink' : 'text-ink-dim'}`} style={{ fontSize: descSz }}>
                 {s.description}
               </span>
             </button>
