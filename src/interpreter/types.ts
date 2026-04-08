@@ -90,4 +90,6 @@ export interface Step {
   error?: string;
   // Pista para a UI: qual variável/célula está em foco
   focus?: { varName: string; cellIndex?: number[]; kind: 'read' | 'write' };
+  // localStorage simulado (apenas para JavaScript)
+  storage?: Record<string, string>;
 }

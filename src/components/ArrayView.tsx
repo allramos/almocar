@@ -5,17 +5,19 @@ interface Props {
   vars: VarSnapshot[];
   zoom?: number;
   onZoomChange?: (delta: number) => void;
+  storage?: Record<string, string>;
 }
 
-export function ArrayView({ vars, zoom = 1, onZoomChange }: Props) {
+export function ArrayView({ vars, zoom = 1, onZoomChange, storage }: Props) {
   const arrays = vars.filter(v => v.cells && v.shape && v.shape.length > 0);
+  const storageEntries = storage ? Object.entries(storage) : [];
 
   return (
     <div className="panel flex flex-col w-full min-h-0">
       <div className="panel-title">
         <span className="chapter">II</span>
         <span className="label">Estruturas</span>
-        <span className="meta">{arrays.length} item{arrays.length === 1 ? '' : 's'}</span>
+        <span className="meta">{arrays.length + (storageEntries.length > 0 ? 1 : 0)} item{arrays.length + (storageEntries.length > 0 ? 1 : 0) === 1 ? '' : 's'}</span>
         {onZoomChange && (
           <span className="flex items-center gap-1 ml-auto">
             <button
@@ -41,7 +43,7 @@ export function ArrayView({ vars, zoom = 1, onZoomChange }: Props) {
         )}
       </div>
       <div className="px-4 pb-4 pt-4 overflow-auto flex-1 space-y-5" style={{ zoom }}>
-        {arrays.length === 0 && (
+        {arrays.length === 0 && storageEntries.length === 0 && (
           <div className="text-ink-fade text-xs px-1 py-2 font-mono">
             Nenhum vetor ou matriz no escopo.
           </div>
@@ -49,6 +51,9 @@ export function ArrayView({ vars, zoom = 1, onZoomChange }: Props) {
         {arrays.map(v => (
           <ArrayBlock key={v.name} variable={v} />
         ))}
+        {storageEntries.length > 0 && (
+          <StorageBlock entries={storageEntries} />
+        )}
       </div>
     </div>
   );
@@ -114,6 +119,30 @@ function Array2D({ cells, rows, cols }: { cells: any[]; rows: number; cols: numb
           ))}
         </div>
       ))}
+    </div>
+  );
+}
+
+function StorageBlock({ entries }: { entries: [string, string][] }) {
+  return (
+    <div className="board">
+      <div className="flex items-baseline gap-3 mb-3">
+        <span className="font-mono text-ink text-[13px] font-medium">
+          localStorage
+        </span>
+        <span className="font-mono text-ink-mute text-[11px]">Storage</span>
+        <span className="flex-1 border-b border-bg-crust translate-y-[-3px]" />
+        <span className="font-mono text-ink-fade text-[10px]">{entries.length} {entries.length === 1 ? 'chave' : 'chaves'}</span>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {entries.map(([key, value]) => (
+          <div key={key} className="flex items-center gap-1.5">
+            <div className="tile" style={{ minWidth: 60 }}>{key}</div>
+            <span className="text-ink-fade text-[11px] font-mono">→</span>
+            <div className="tile" style={{ minWidth: 60 }}>{value}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

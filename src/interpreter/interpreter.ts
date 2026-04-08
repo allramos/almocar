@@ -85,6 +85,8 @@ class Interpreter {
   // Fila de tokens de entrada para scanf. Pré-alimentada por options.inputs.
   inputQueue: string[] = [];
   requestMoreInput: (message: string) => string | null;
+  // localStorage simulado (JavaScript)
+  simulatedStorage = new Map<string, string>();
 
   constructor(public program: Program, options: RunOptions = {}) {
     for (const f of program.functions) this.functions.set(f.name, f);
@@ -492,6 +494,10 @@ class Interpreter {
     if (name === 'prompt') return this.execPrompt(args, scope, line);
     if (name === 'parseInt') return this.execParseInt(args, scope, line);
     if (name === 'parseFloat') return this.execParseFloat(args, scope, line);
+    if (name === 'localStorage.setItem') return this.execStorageSetItem(args, scope, line);
+    if (name === 'localStorage.getItem') return this.execStorageGetItem(args, scope, line);
+    if (name === 'localStorage.removeItem') return this.execStorageRemoveItem(args, scope, line);
+    if (name === 'localStorage.clear') return this.execStorageClear(line);
     if (name === 'Math.floor') {
       const v = this.evalExpr(args[0], scope);
       return Math.floor(v);
@@ -802,6 +808,52 @@ class Interpreter {
     return v;
   }
 
+  // ===== localStorage simulado (JavaScript) =====
+  private getStringArg(expr: Expr, scope: Scope): string {
+    const v = this.evalExpr(expr, scope);
+    return this.stringTable.get(v) ?? String(v);
+  }
+
+  execStorageSetItem(args: Expr[], scope: Scope, line: number): number {
+    if (args.length < 2) throw new RuntimeError('localStorage.setItem requer 2 argumentos (chave, valor)', line);
+    const key = this.getStringArg(args[0], scope);
+    const value = this.getStringArg(args[1], scope);
+    this.simulatedStorage.set(key, value);
+    this.recordStep(line, `localStorage.setItem("${key}", "${value}")`, scope, 'running');
+    return 0;
+  }
+
+  execStorageGetItem(args: Expr[], scope: Scope, line: number): number {
+    if (args.length < 1) throw new RuntimeError('localStorage.getItem requer 1 argumento (chave)', line);
+    const key = this.getStringArg(args[0], scope);
+    const value = this.simulatedStorage.get(key);
+    if (value === undefined) {
+      this.recordStep(line, `localStorage.getItem("${key}") → null`, scope, 'running');
+      return 0; // simula null como 0
+    }
+    // Armazena resultado como string na stringTable
+    const addr = this.memory.allocLogical(value.length + 1);
+    for (let i = 0; i < value.length; i++) this.memory.write(addr + i, value.charCodeAt(i));
+    this.memory.write(addr + value.length, 0);
+    this.stringTable.set(addr, value);
+    this.recordStep(line, `localStorage.getItem("${key}") → "${value}"`, scope, 'running');
+    return addr;
+  }
+
+  execStorageRemoveItem(args: Expr[], scope: Scope, line: number): number {
+    if (args.length < 1) throw new RuntimeError('localStorage.removeItem requer 1 argumento (chave)', line);
+    const key = this.getStringArg(args[0], scope);
+    this.simulatedStorage.delete(key);
+    this.recordStep(line, `localStorage.removeItem("${key}")`, scope, 'running');
+    return 0;
+  }
+
+  execStorageClear(line: number): number {
+    this.simulatedStorage.clear();
+    this.recordStep(line, `localStorage.clear()`, this.globalScope, 'running');
+    return 0;
+  }
+
   // ===== Snapshot do escopo =====
   snapshotScope(scope: Scope): VarSnapshot[] {
     const result: VarSnapshot[] = [];
@@ -880,6 +932,9 @@ class Interpreter {
       status,
       error,
       focus: primary,
+      storage: this.simulatedStorage.size > 0
+        ? Object.fromEntries(this.simulatedStorage)
+        : undefined,
     });
     this.pendingFoci = [];
   }

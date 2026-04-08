@@ -526,7 +526,7 @@ export default function App() {
             className="flex-shrink-0 min-h-0 flex"
             style={{ height: `${layout.midSplit * 100}%`, minHeight: 60 }}
           >
-            <ArrayView vars={current?.scope ?? []} zoom={arrayZoom} onZoomChange={changeArrayZoom} />
+            <ArrayView vars={current?.scope ?? []} zoom={arrayZoom} onZoomChange={changeArrayZoom} storage={current?.storage} />
           </div>
           <DragDivider direction="row" onDrag={(delta, total) => {
             updateLayout({ midSplit: Math.min(0.8, Math.max(0.15, layout.midSplit + delta / total)) });

@@ -81,6 +81,14 @@ export function tokenize(source: string): Token[] {
         continue;
       }
 
+      // `localStorage.setItem`, `localStorage.getItem` etc.
+      if (s === 'localStorage' && at() === '.') {
+        let full = s;
+        while (i < n && (at() === '.' || isIdentCont(at()))) { full += at(); advance(); }
+        tokens.push({ kind: 'IDENT', value: full, line: startLine, col: startCol });
+        continue;
+      }
+
       // `Math.floor`, `Math.random` etc.
       if (s === 'Math' && at() === '.') {
         let full = s;
