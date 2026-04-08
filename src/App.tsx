@@ -130,6 +130,7 @@ export default function App() {
   }
 
   // Atalhos globais: ←/→ navegam entre passos durante a execução.
+  // Ctrl+Enter alterna entre executar e parar.
   // Ignora quando o foco está em um campo editável (textarea/input/select).
   useEffect(() => {
     function isEditable(t: EventTarget | null): boolean {
@@ -138,6 +139,13 @@ export default function App() {
       return tag === "TEXTAREA" || tag === "INPUT" || tag === "SELECT" || t.isContentEditable;
     }
     function onKey(e: KeyboardEvent) {
+      // Ctrl+Enter: executar ou parar
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        if (mode === "editing") cozinhar();
+        else voltarEditar();
+        return;
+      }
       if (mode !== "running") return;
       if (isEditable(e.target)) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -236,6 +244,7 @@ export default function App() {
               errorLine={errorLine}
               editable={mode === "editing"}
               onChange={(s) => { setSource(s); if (error) setError(null); }}
+              onFormat={formatarCodigo}
             />
           </div>
         </section>
