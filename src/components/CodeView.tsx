@@ -15,11 +15,13 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
   const tokenizedLines = useMemo(() => highlight.tokenize(source), [source, highlight]);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
+  const gutterRef = useRef<HTMLDivElement>(null);
 
   function syncScroll() {
-    const ta = taRef.current; const pre = preRef.current;
+    const ta = taRef.current; const pre = preRef.current; const gutter = gutterRef.current;
     if (!ta || !pre) return;
     pre.style.transform = `translate(${-ta.scrollLeft}px, ${-ta.scrollTop}px)`;
+    if (gutter) gutter.style.transform = `translateY(${-ta.scrollTop}px)`;
   }
 
   // Atalhos do editor:
@@ -200,34 +202,42 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
 
   if (editable) {
     // Editor com sintaxe colorida via overlay.
+    const lineCount = tokenizedLines.length;
     return (
       <div className="code-editor">
-        <pre ref={preRef} className="code-overlay" aria-hidden>
-          {tokenizedLines.map((tokens, i) => {
-            const ln = i + 1;
-            const hasError = ln === errorLine;
-            return (
-              <span key={i} className={hasError ? 'code-error-line' : undefined}>
-                {tokens.map((t, k) => (
-                  <span key={k} className={`tok tok-${t.kind}`}>{t.text}</span>
-                ))}
-                {'\n'}
-              </span>
-            );
-          })}
-        </pre>
-        <textarea
-          ref={taRef}
-          className="code-input"
-          value={source}
-          spellCheck={false}
-          onChange={(e) => onChange?.(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onScroll={syncScroll}
-          autoCapitalize="off"
-          autoCorrect="off"
-          autoComplete="off"
-        />
+        <div className="code-gutter" ref={gutterRef}>
+          {Array.from({ length: lineCount }, (_, i) => (
+            <div key={i} className={`code-gutter-num${i + 1 === errorLine ? ' error' : ''}`}>{i + 1}</div>
+          ))}
+        </div>
+        <div className="code-editor-body">
+          <pre ref={preRef} className="code-overlay" aria-hidden>
+            {tokenizedLines.map((tokens, i) => {
+              const ln = i + 1;
+              const hasError = ln === errorLine;
+              return (
+                <span key={i} className={hasError ? 'code-error-line' : undefined}>
+                  {tokens.map((t, k) => (
+                    <span key={k} className={`tok tok-${t.kind}`}>{t.text}</span>
+                  ))}
+                  {'\n'}
+                </span>
+              );
+            })}
+          </pre>
+          <textarea
+            ref={taRef}
+            className="code-input"
+            value={source}
+            spellCheck={false}
+            onChange={(e) => onChange?.(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onScroll={syncScroll}
+            autoCapitalize="off"
+            autoCorrect="off"
+            autoComplete="off"
+          />
+        </div>
       </div>
     );
   }

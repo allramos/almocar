@@ -508,6 +508,7 @@ select.menu-select:focus-visible {
    A textarea controla o scroll; o overlay segue via transform. */
 .code-editor {
   position: relative;
+  display: flex;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -515,8 +516,35 @@ select.menu-select:focus-visible {
   font-size: 12.5px;
   line-height: 20px;
 }
-.code-editor pre.code-overlay,
-.code-editor textarea.code-input {
+.code-gutter {
+  flex-shrink: 0;
+  width: 40px;
+  padding-top: 14px;
+  text-align: right;
+  user-select: none;
+  pointer-events: none;
+  overflow: hidden;
+  will-change: transform;
+}
+.code-gutter-num {
+  height: 20px;
+  padding-right: 10px;
+  color: rgb(var(--ink-fade));
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 20px;
+}
+.code-gutter-num.error {
+  color: rgb(var(--wine));
+  font-weight: 600;
+}
+.code-editor-body {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+.code-editor-body pre.code-overlay,
+.code-editor-body textarea.code-input {
   margin: 0;
   padding: 14px 16px;
   font: inherit;
@@ -527,7 +555,7 @@ select.menu-select:focus-visible {
   -moz-tab-size: 4;
   box-sizing: border-box;
 }
-.code-editor pre.code-overlay {
+.code-editor-body pre.code-overlay {
   position: absolute;
   top: 0; left: 0;
   width: max-content;
@@ -536,7 +564,7 @@ select.menu-select:focus-visible {
   color: rgb(var(--ink));
   will-change: transform;
 }
-.code-editor textarea.code-input {
+.code-editor-body textarea.code-input {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -549,7 +577,7 @@ select.menu-select:focus-visible {
   resize: none;
   overflow: auto;
 }
-.code-editor textarea.code-input::selection {
+.code-editor-body textarea.code-input::selection {
   background: rgb(var(--ember) / 0.30);
   color: transparent;
 }
