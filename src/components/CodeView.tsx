@@ -178,6 +178,41 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
       return;
     }
 
+    // Auto-closing: parênteses, colchetes, chaves, aspas
+    const pairs: Record<string, string> = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'" };
+    const closing = pairs[e.key];
+    if (closing && start === end) {
+      e.preventDefault();
+      const newText = value.slice(0, start) + e.key + closing + value.slice(end);
+      onChange?.(newText);
+      requestAnimationFrame(() => {
+        ta.selectionStart = ta.selectionEnd = start + 1;
+      });
+      return;
+    }
+    // Pular o caractere de fechamento se já está na frente do cursor
+    if (')]}"\''.includes(e.key) && start === end && value[start] === e.key) {
+      e.preventDefault();
+      requestAnimationFrame(() => {
+        ta.selectionStart = ta.selectionEnd = start + 1;
+      });
+      return;
+    }
+    // Backspace: remover par se cursor está entre par de caracteres
+    if (e.key === 'Backspace' && start === end && start > 0) {
+      const charBefore = value[start - 1];
+      const charAfter = value[start];
+      if (pairs[charBefore] && pairs[charBefore] === charAfter) {
+        e.preventDefault();
+        const newText = value.slice(0, start - 1) + value.slice(start + 1);
+        onChange?.(newText);
+        requestAnimationFrame(() => {
+          ta.selectionStart = ta.selectionEnd = start - 1;
+        });
+        return;
+      }
+    }
+
     // Enter após '{' → auto-fechar com '}'
     if (e.key === 'Enter') {
       const before = value.slice(0, start);

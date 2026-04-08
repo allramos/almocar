@@ -444,6 +444,16 @@ export default function App() {
           const url = await shortenIfPossible(longURL);
           await navigator.clipboard.writeText(url);
         }}
+        onDownload={() => {
+          const extMap: Record<string, string> = { c: '.c', java: '.java', javascript: '.js', portugol: '.por' };
+          const ext = extMap[languageId] ?? '.txt';
+          const blob = new Blob([source], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `codigo${ext}`;
+          a.click();
+          URL.revokeObjectURL(a.href);
+        }}
       />
       {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
 
@@ -620,6 +630,7 @@ function Header({
   onResetLayout,
   onNew,
   onShare,
+  onDownload,
 }: {
   exampleKey: string;
   onExample: (k: string) => void;
@@ -634,6 +645,7 @@ function Header({
   onResetLayout: () => void;
   onNew: () => void;
   onShare: () => Promise<void>;
+  onDownload: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   const allLanguages = getAllLanguages();
@@ -684,15 +696,11 @@ function Header({
           ))}
         </select>
         <button
-          onClick={onToggleTheme}
+          onClick={onDownload}
           className="btn btn-icon"
-          title={
-            theme === "dark"
-              ? "Mudar para modo claro"
-              : "Mudar para modo escuro"
-          }
+          title="Baixar arquivo de código"
         >
-          {theme === "dark" ? "☀" : "☾"}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
         <button
           onClick={async () => {
@@ -704,6 +712,17 @@ function Header({
           title="Copiar link de compartilhamento"
         >
           {copied ? '\u2713 Copiado!' : 'Compartilhar'}
+        </button>
+        <button
+          onClick={onToggleTheme}
+          className="btn btn-icon"
+          title={
+            theme === "dark"
+              ? "Mudar para modo claro"
+              : "Mudar para modo escuro"
+          }
+        >
+          {theme === "dark" ? "☀" : "☾"}
         </button>
         <button
           onClick={onResetLayout}
