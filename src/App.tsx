@@ -66,7 +66,20 @@ export default function App() {
   }, [playing, stepIndex, steps.length, speed]);
 
   function cozinhar() {
-    const result = compileAndRun(source);
+    // Se o código usa scanf, oferece ao aluno um único prompt onde ele
+    // digita todos os valores de entrada (separados por espaço ou quebra de
+    // linha). Caso ele entre menos valores do que o necessário, o
+    // interpretador volta a perguntar via window.prompt.
+    let inputs: string | undefined;
+    if (/\bscanf\s*\(/.test(source)) {
+      const raw = window.prompt(
+        "Este código usa scanf. Informe os valores de entrada separados por espaço ou quebra de linha:",
+        "",
+      );
+      if (raw === null) return; // cancelado
+      inputs = raw;
+    }
+    const result = compileAndRun(source, inputs !== undefined ? { inputs } : {});
     setSteps(result.steps);
     setStepIndex(0);
     setMode("running");

@@ -53,8 +53,16 @@ export interface RunResult {
 // ----- Configuração -----
 const MAX_STEPS = 5000;
 
-export function run(program: Program): RunResult {
-  const interp = new Interpreter(program);
+// Opções de execução. `inputs` pré-alimenta a fila de entrada usada por scanf.
+// Quando a fila está vazia e ainda há leituras, recorremos a `requestMoreInput`
+// (por padrão, window.prompt) para solicitar mais valores.
+export interface RunOptions {
+  inputs?: string;
+  requestMoreInput?: (message: string) => string | null;
+}
+
+export function run(program: Program, options: RunOptions = {}): RunResult {
+  const interp = new Interpreter(program, options);
   return interp.run();
 }
 
@@ -68,9 +76,18 @@ class Interpreter {
   pendingFoci: NonNullable<Step['focus']>[] = [];
   // Último escopo "vivo" (de uma função em execução), preservado para o passo final.
   lastLiveScope: Scope | undefined;
+  // Fila de tokens de entrada para scanf. Pré-alimentada por options.inputs.
+  inputQueue: string[] = [];
+  requestMoreInput: (message: string) => string | null;
 
-  constructor(public program: Program) {
+  constructor(public program: Program, options: RunOptions = {}) {
     for (const f of program.functions) this.functions.set(f.name, f);
+    if (options.inputs) {
+      this.inputQueue = options.inputs.split(/\s+/).filter((s) => s.length > 0);
+    }
+    this.requestMoreInput =
+      options.requestMoreInput ??
+      ((msg) => (typeof window !== 'undefined' ? window.prompt(msg) : null));
   }
 
   run(): RunResult {
@@ -433,6 +450,7 @@ class Interpreter {
 
   evalCall(name: string, args: Expr[], scope: Scope, line: number): number {
     if (name === 'printf') return this.execPrintf(args, scope, line);
+    if (name === 'scanf') return this.execScanf(args, scope, line);
     if (name === 'putchar') {
       const v = this.evalExpr(args[0], scope);
       this.output += String.fromCharCode(v);
@@ -480,6 +498,95 @@ class Interpreter {
     }
     this.output += out;
     return out.length;
+  }
+
+  // Lê o próximo token da fila de entrada. Se a fila estiver vazia, solicita
+  // mais valores ao usuário (window.prompt por padrão) e re-tokeniza.
+  nextInputToken(promptMsg: string, line: number): string {
+    while (this.inputQueue.length === 0) {
+      const raw = this.requestMoreInput(promptMsg);
+      if (raw === null) {
+        throw new RuntimeError(`scanf: leitura cancelada pelo usuário`, line);
+      }
+      const tokens = raw.split(/\s+/).filter((s) => s.length > 0);
+      if (tokens.length === 0) continue;
+      this.inputQueue.push(...tokens);
+    }
+    return this.inputQueue.shift()!;
+  }
+
+  execScanf(args: Expr[], scope: Scope, line: number): number {
+    if (args.length === 0) return 0;
+    const fmtAddr = this.evalExpr(args[0], scope);
+    const fmt = this.stringTable.get(fmtAddr);
+    if (fmt === undefined) throw new RuntimeError(`scanf: formato inválido`, line);
+    let argi = 1;
+    let read = 0;
+    let echo = '';
+    for (let i = 0; i < fmt.length; i++) {
+      const c = fmt[i];
+      if (c !== '%') continue;
+      i++;
+      // ignora largura/modificadores: dígitos, '.', 'l', 'h'
+      while (i < fmt.length && /[0-9.lhL]/.test(fmt[i])) i++;
+      const conv = fmt[i];
+      if (conv === '%') continue;
+      if (argi >= args.length) {
+        throw new RuntimeError(`scanf: faltam argumentos para o formato`, line);
+      }
+      const destAddr = this.evalExpr(args[argi++], scope);
+      const promptMsg = `Entrada para scanf("${fmt.replace(/\n/g, '\\n')}") — valor #${read + 1} (%${conv})`;
+      if (conv === 's') {
+        const tok = this.nextInputToken(promptMsg, line);
+        for (let k = 0; k < tok.length; k++) {
+          this.memory.write(destAddr + k, tok.charCodeAt(k));
+        }
+        this.memory.write(destAddr + tok.length, 0);
+        echo += (echo ? ' ' : '') + tok;
+        read++;
+        continue;
+      }
+      const tok = this.nextInputToken(promptMsg, line);
+      let value: number;
+      switch (conv) {
+        case 'd': case 'i': {
+          const n = parseInt(tok, 10);
+          if (Number.isNaN(n)) throw new RuntimeError(`scanf: valor inteiro inválido '${tok}'`, line);
+          value = n;
+          break;
+        }
+        case 'u': {
+          const n = parseInt(tok, 10);
+          if (Number.isNaN(n)) throw new RuntimeError(`scanf: valor inteiro inválido '${tok}'`, line);
+          value = n >>> 0;
+          break;
+        }
+        case 'f': case 'e': case 'g': {
+          const n = parseFloat(tok);
+          if (Number.isNaN(n)) throw new RuntimeError(`scanf: valor real inválido '${tok}'`, line);
+          value = n;
+          break;
+        }
+        case 'c': {
+          value = tok.charCodeAt(0);
+          break;
+        }
+        case 'x': case 'X': {
+          const n = parseInt(tok, 16);
+          if (Number.isNaN(n)) throw new RuntimeError(`scanf: valor hex inválido '${tok}'`, line);
+          value = n;
+          break;
+        }
+        default:
+          throw new RuntimeError(`scanf: conversão '%${conv}' não suportada`, line);
+      }
+      this.memory.write(destAddr, value);
+      echo += (echo ? ' ' : '') + tok;
+      read++;
+    }
+    // Ecoa as entradas na saída para que o aluno veja os valores lidos no painel.
+    if (echo.length > 0) this.output += echo + '\n';
+    return read;
   }
 
   // ===== Snapshot do escopo =====
