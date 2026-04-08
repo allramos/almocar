@@ -3,7 +3,5 @@
     @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&amp;display=swap');
     .word { font-family: 'Fraunces', Georgia, serif; font-size: 48px; font-weight: 600; letter-spacing: -0.03em; }
   </style>
-  <text x="0" y="46" class="word" fill="#e8e2d6">almo</text>
-  <text x="130" y="46" class="word" fill="#e0915c">ç</text>
-  <text x="152" y="46" class="word" fill="#e8e2d6">ar</text>
+  <text x="0" y="46" class="word" fill="#e8e2d6">almo<tspan fill="#e0915c">ç</tspan>ar</text>
 </svg>
