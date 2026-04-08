@@ -108,6 +108,17 @@ export default function App() {
   const [inputConv, setInputConv] = useState("");
   const playRef = useRef<number | null>(null);
   const [layout, setLayout] = useState<LayoutConfig>(loadLayout);
+  const [fontSize, setFontSize] = useState<number>(
+    () => Number(localStorage.getItem("almocar.fontSize")) || 12.5,
+  );
+
+  function changeFontSize(delta: number) {
+    setFontSize((prev) => {
+      const next = Math.min(24, Math.max(8, +(prev + delta).toFixed(1)));
+      localStorage.setItem("almocar.fontSize", String(next));
+      return next;
+    });
+  }
 
   function updateLayout(patch: Partial<LayoutConfig>) {
     setLayout((prev) => {
@@ -324,6 +335,27 @@ export default function App() {
             <span className="meta">
               {mode === "editing" ? "edição" : "execução"}
             </span>
+            <span className="flex items-center gap-1 ml-auto">
+              <button
+                onClick={() => changeFontSize(-0.5)}
+                className="panel-action"
+                title="Diminuir fonte"
+                style={{ padding: '0 5px', minWidth: 0 }}
+              >
+                A−
+              </button>
+              <span className="text-[10px] tabular-nums text-ink-mute" style={{ minWidth: 28, textAlign: 'center' }}>
+                {fontSize}px
+              </span>
+              <button
+                onClick={() => changeFontSize(0.5)}
+                className="panel-action"
+                title="Aumentar fonte"
+                style={{ padding: '0 5px', minWidth: 0 }}
+              >
+                A+
+              </button>
+            </span>
             {mode === "editing" ? (
               <>
                 <button
@@ -363,6 +395,7 @@ export default function App() {
               }}
               onFormat={formatarCodigo}
               highlight={lang.highlight}
+              fontSize={fontSize}
             />
           </div>
         </section>

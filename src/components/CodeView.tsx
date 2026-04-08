@@ -9,9 +9,10 @@ interface Props {
   onChange?: (s: string) => void;
   onFormat?: () => void;
   highlight: HighlightConfig;
+  fontSize?: number;
 }
 
-export function CodeView({ source, activeLine, errorLine, editable, onChange, onFormat, highlight }: Props) {
+export function CodeView({ source, activeLine, errorLine, editable, onChange, onFormat, highlight, fontSize = 12.5 }: Props) {
   const tokenizedLines = useMemo(() => highlight.tokenize(source), [source, highlight]);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
@@ -203,11 +204,13 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
   if (editable) {
     // Editor com sintaxe colorida via overlay.
     const lineCount = tokenizedLines.length;
+    const lineH = Math.round(fontSize * 1.6);
+    const fontStyle = { fontSize: `${fontSize}px`, lineHeight: `${lineH}px` };
     return (
-      <div className="code-editor">
+      <div className="code-editor" style={fontStyle}>
         <div className="code-gutter" ref={gutterRef}>
           {Array.from({ length: lineCount }, (_, i) => (
-            <div key={i} className={`code-gutter-num${i + 1 === errorLine ? ' error' : ''}`}>{i + 1}</div>
+            <div key={i} className={`code-gutter-num${i + 1 === errorLine ? ' error' : ''}`} style={{ height: lineH, lineHeight: `${lineH}px`, fontSize: `${fontSize - 1.5}px` }}>{i + 1}</div>
           ))}
         </div>
         <div className="code-editor-body">
@@ -243,6 +246,8 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
   }
 
   // Modo de execução: linhas numeradas + linha ativa destacada.
+  const lineH = Math.round(fontSize * 1.6);
+  const fontStyle = { fontSize: `${fontSize}px`, lineHeight: `${lineH}px` };
   return (
     <div className="w-full h-full overflow-auto py-3">
       {tokenizedLines.map((tokens, i) => {
@@ -250,8 +255,8 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
         const active = ln === activeLine;
         const hasError = ln === errorLine;
         return (
-          <div key={i} className={`code-line ${active ? 'active' : ''} ${hasError ? 'error' : ''}`}>
-            <span className="num">{ln}</span>
+          <div key={i} className={`code-line ${active ? 'active' : ''} ${hasError ? 'error' : ''}`} style={fontStyle}>
+            <span className="num" style={{ fontSize: `${fontSize - 1.5}px` }}>{ln}</span>
             <span className="flex-1 pr-4">
               {tokens.length === 0 ? ' ' : tokens.map((t, k) => (
                 <span key={k} className={`tok tok-${t.kind}`}>{t.text}</span>
