@@ -108,12 +108,12 @@ class Parser {
   }
 
   parseParam(): Param {
-    const type = this.parseType();
+    let type: CType = this.parseType();
     const name = this.expect('IDENT').value;
-    // arrays como parâmetros
-    if (this.match('PUNCT', '[')) {
+    // arrays como parâmetros (suporta múltiplas dimensões)
+    while (this.match('PUNCT', '[')) {
       while (!this.match('PUNCT', ']')) this.next();
-      return { name, type: { kind: 'pointer', to: type } };
+      type = { kind: 'pointer', to: type };
     }
     return { name, type };
   }
