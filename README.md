@@ -2,6 +2,10 @@
   <img src="public/logo.svg" alt="almoçar" width="280" />
 </p>
 
+<p align="center">
+  <a href="https://allramos.github.io/almocar/">🔗 Acesse o ALMOÇAR online</a>
+</p>
+
 **A**mbiente **L**údico de **M**onitoramento de **O**perações e **C**ódigo
 **A**lgorítmico **R**esponsivo.
 

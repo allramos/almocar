@@ -1,12 +1,14 @@
 import type { Language } from './types';
 import { cLanguage } from './c';
 import { portugolLanguage } from './portugol';
+import { javaLanguage } from './java';
 
 export type { Language, HighlightConfig, Tok, TokKind } from './types';
 
 const languages: Record<string, Language> = {
   c: cLanguage,
   portugol: portugolLanguage,
+  java: javaLanguage,
 };
 
 export function getLanguage(id: string): Language {

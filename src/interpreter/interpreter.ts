@@ -480,6 +480,13 @@ class Interpreter {
     // ===== Built-ins Portugol =====
     if (name === 'escreva' || name === 'escreval') return this.execEscreva(args, scope, line, name === 'escreval');
     if (name === 'leia') return this.execLeia(args, scope, line);
+    // ===== Built-ins Java =====
+    if (name === 'System.out.println' || name === 'System.out.print')
+      return this.execSystemOut(args, scope, line, name === 'System.out.println');
+    if (name === 'scanner.nextInt') return this.execScannerNext(line, 'd');
+    if (name === 'scanner.nextFloat' || name === 'scanner.nextDouble')
+      return this.execScannerNext(line, 'f');
+    if (name === 'scanner.close') return 0;
     // ===== Funções do usuário =====
     const fn = this.functions.get(name);
     if (!fn) throw new RuntimeError(`Função '${name}' não definida`, line);
@@ -654,6 +661,44 @@ class Interpreter {
     }
     if (echo.length > 0) this.output += echo + '\n';
     return read;
+  }
+
+  // ===== Built-ins Java =====
+
+  /** System.out.println / System.out.print — imprime args concatenados, println adiciona \n. */
+  execSystemOut(args: Expr[], scope: Scope, line: number, newline: boolean): number {
+    let out = '';
+    for (const arg of args) {
+      const v = this.evalExpr(arg, scope);
+      if (this.stringTable.has(v) && arg.kind === 'StringLit') {
+        out += this.stringTable.get(v)!;
+      } else if (Number.isInteger(v)) {
+        out += String(Math.trunc(v));
+      } else {
+        out += Number(v).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+      }
+    }
+    if (newline) out += '\n';
+    this.output += out;
+    return out.length;
+  }
+
+  /** scanner.nextInt / scanner.nextFloat — lê valores do teclado. */
+  execScannerNext(line: number, conv: string): number {
+    const promptMsg = conv === 'd'
+      ? 'Entrada para scanner.nextInt()'
+      : 'Entrada para scanner.nextFloat()';
+    const tok = this.nextInputToken(promptMsg, line, conv);
+    let value: number;
+    if (conv === 'f') {
+      value = parseFloat(tok);
+      if (Number.isNaN(value)) throw new RuntimeError(`scanner.nextFloat(): valor real inválido '${tok}'`, line);
+    } else {
+      value = parseInt(tok, 10);
+      if (Number.isNaN(value)) throw new RuntimeError(`scanner.nextInt(): valor inteiro inválido '${tok}'`, line);
+    }
+    this.output += tok + '\n';
+    return value;
   }
 
   // ===== Snapshot do escopo =====
