@@ -247,7 +247,7 @@ export default function App() {
                 <button
                   onClick={cozinhar}
                   className="panel-action panel-action-primary"
-                  title="Executar o código"
+                  title="Executar o código (Ctrl+Enter)"
                 >
                   Executar
                 </button>

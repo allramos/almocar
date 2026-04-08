@@ -115,14 +115,15 @@ class Parser {
     this.countArrayBrackets();
     const nameTok = this.expect('IDENT');
     this.expect('PUNCT', '(');
-    const params: Param[] = [];
+    // Consome os parâmetros da assinatura mas descarta String[] args (main)
+    // pois o interpretador não precisa deles.
     if (!this.is('PUNCT', ')')) {
-      params.push(this.parseParam());
-      while (this.match('PUNCT', ',')) params.push(this.parseParam());
+      this.parseParam();
+      while (this.match('PUNCT', ',')) this.parseParam();
     }
     this.expect('PUNCT', ')');
     const body = this.parseBlock();
-    return { kind: 'FunctionDecl', name: nameTok.value, returnType, params, body, line: startLine };
+    return { kind: 'FunctionDecl', name: nameTok.value, returnType, params: [], body, line: startLine };
   }
 
   parseParam(): Param {
