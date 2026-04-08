@@ -188,6 +188,10 @@ export default function App() {
   const [waitingForInput, setWaitingForInput] = useState(false);
   const [inputConv, setInputConv] = useState("");
   const playRef = useRef<number | null>(null);
+  const sourceRef = useRef(source);
+  const langRef = useRef(lang);
+  useEffect(() => { sourceRef.current = source; }, [source]);
+  useEffect(() => { langRef.current = lang; }, [lang]);
   const [layout, setLayout] = useState<LayoutConfig>(loadLayout);
   const [fontSize, setFontSize] = useState<number>(
     () => Number(localStorage.getItem("almocar.fontSize")) || 12.5,
@@ -296,7 +300,7 @@ export default function App() {
   }
 
   function executeWith(inputs: string[], jumpToEnd = false) {
-    const result = compileAndRun(source, lang, {
+    const result = compileAndRun(sourceRef.current, langRef.current, {
       inputs: inputs.join(" "),
       requestMoreInput: () => null,
     });
