@@ -3,11 +3,12 @@ import React, { useMemo, useRef } from 'react';
 interface Props {
   source: string;
   activeLine?: number;
+  errorLine?: number;
   editable: boolean;
   onChange?: (s: string) => void;
 }
 
-export function CodeView({ source, activeLine, editable, onChange }: Props) {
+export function CodeView({ source, activeLine, errorLine, editable, onChange }: Props) {
   const tokenizedLines = useMemo(() => tokenizeC(source), [source]);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
@@ -81,14 +82,18 @@ export function CodeView({ source, activeLine, editable, onChange }: Props) {
     return (
       <div className="code-editor">
         <pre ref={preRef} className="code-overlay" aria-hidden>
-          {tokenizedLines.map((tokens, i) => (
-            <React.Fragment key={i}>
-              {tokens.map((t, k) => (
-                <span key={k} className={`tok tok-${t.kind}`}>{t.text}</span>
-              ))}
-              {'\n'}
-            </React.Fragment>
-          ))}
+          {tokenizedLines.map((tokens, i) => {
+            const ln = i + 1;
+            const hasError = ln === errorLine;
+            return (
+              <span key={i} className={hasError ? 'code-error-line' : undefined}>
+                {tokens.map((t, k) => (
+                  <span key={k} className={`tok tok-${t.kind}`}>{t.text}</span>
+                ))}
+                {'\n'}
+              </span>
+            );
+          })}
         </pre>
         <textarea
           ref={taRef}
@@ -112,8 +117,9 @@ export function CodeView({ source, activeLine, editable, onChange }: Props) {
       {tokenizedLines.map((tokens, i) => {
         const ln = i + 1;
         const active = ln === activeLine;
+        const hasError = ln === errorLine;
         return (
-          <div key={i} className={`code-line ${active ? 'active' : ''}`}>
+          <div key={i} className={`code-line ${active ? 'active' : ''} ${hasError ? 'error' : ''}`}>
             <span className="num">{ln}</span>
             <span className="flex-1 pr-4">
               {tokens.length === 0 ? ' ' : tokens.map((t, k) => (

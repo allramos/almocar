@@ -46,12 +46,23 @@ export default function App() {
   const visSteps = mode === "running" ? steps : [];
   const visStepIndex = mode === "running" ? stepIndex : 0;
   const mood = useMemo<"idle" | "cooking" | "success" | "error">(() => {
+    if (mode === "editing" && error) return "error";
     if (mode === "editing") return "idle";
     if (!current) return "idle";
     if (current.status === "error") return "error";
     if (current.status === "success") return "success";
     return "cooking";
-  }, [mode, current]);
+  }, [mode, current, error]);
+
+  // Extrai a linha do erro da mensagem (ex: "linha 5, col 3") para destacar no código.
+  const errorLine = useMemo(() => {
+    if (mode === "running" && current?.status === "error") return current.line;
+    if (mode === "editing" && error) {
+      const m = error.match(/linha\s+(\d+)/);
+      return m ? parseInt(m[1], 10) : undefined;
+    }
+    return undefined;
+  }, [mode, current, error]);
 
   useEffect(() => {
     if (!playing) return;
@@ -78,6 +89,13 @@ export default function App() {
       inputs: inputs.join(' '),
       requestMoreInput: () => null,
     });
+
+    // Se houve erro de compilação, permanece em modo edição.
+    if (!result.ok && !result.needsInput) {
+      setError(result.error ?? "Erro desconhecido");
+      return;
+    }
+
     setSteps(result.steps);
     setMode("running");
     setPlaying(false);
@@ -90,7 +108,7 @@ export default function App() {
       setWaitingForInput(false);
       setInputConv('');
       setStepIndex(jumpToEnd ? Math.max(0, result.steps.length - 1) : 0);
-      setError(result.ok ? null : (result.error ?? "Erro desconhecido"));
+      setError(null);
     }
   }
 
@@ -215,8 +233,9 @@ export default function App() {
             <CodeView
               source={source}
               activeLine={mode === "running" ? current?.line : undefined}
+              errorLine={errorLine}
               editable={mode === "editing"}
-              onChange={setSource}
+              onChange={(s) => { setSource(s); if (error) setError(null); }}
             />
           </div>
         </section>

@@ -29,7 +29,7 @@ class Parser {
     const t = this.peek();
     if (t.kind !== kind || (value !== undefined && t.value !== value)) {
       throw new SyntaxError(
-        `Esperado ${value ?? kind}, encontrado '${t.value}' (linha ${t.line}, col ${t.col})`
+        `Esperado '${value ?? kind}', encontrado '${t.value}' (linha ${t.line}, col ${t.col})`
       );
     }
     return this.next();

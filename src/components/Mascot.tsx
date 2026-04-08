@@ -14,7 +14,7 @@ interface Props {
 export function Mascot({ mood, message, stepIndex, totalSteps }: Props) {
   const hasSteps = totalSteps !== undefined && totalSteps > 0;
   return (
-    <div className="panel flex items-center gap-4 px-4 py-2.5">
+    <div className={`panel flex items-center gap-4 px-4 py-2.5 ${mood === 'error' ? 'status-bar-error' : ''}`}>
       <span className={`status-dot ${mood}`} />
       <span className="smallcaps text-ink-mute whitespace-nowrap">
         {labelFor(mood)}

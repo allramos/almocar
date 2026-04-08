@@ -12,9 +12,12 @@ export function compileAndRun(source: string, options: RunOptions = {}): RunResu
     return run(program, options);
   } catch (e: any) {
     const msg = e?.message ?? String(e);
+    // Tenta extrair número de linha da mensagem de erro do parser.
+    const lineMatch = msg.match(/linha\s+(\d+)/);
+    const errorLine = lineMatch ? parseInt(lineMatch[1], 10) : 1;
     return {
       steps: [{
-        index: 0, line: 1, description: `Erro de compilação: ${msg}`,
+        index: 0, line: errorLine, description: `Erro de compilação: ${msg}`,
         scope: [], output: '', status: 'error', error: msg,
       }],
       output: '',

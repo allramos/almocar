@@ -271,6 +271,20 @@ code, pre, .code-overlay, .code-input,
 }
 .code-line.active .num { color: rgb(var(--ember)); font-weight: 600; }
 
+/* Linha com erro de compilação/execução */
+.code-line.error {
+  background: rgb(var(--wine) / 0.12);
+  box-shadow: inset 3px 0 0 rgb(var(--wine));
+}
+.code-line.error .num { color: rgb(var(--wine)); font-weight: 600; }
+
+/* Destaque de erro no editor (overlay) — sublinhado ondulado vinho. */
+.code-error-line {
+  background: rgb(var(--wine) / 0.10);
+  text-decoration: wavy underline rgb(var(--wine));
+  text-underline-offset: 2px;
+}
+
 /* === Tokens de sintaxe C — paleta editorial kitchen =================
    Não imitamos VSCode: usamos a mesma paleta do menu para evitar
    ruptura visual. Ember = palavras-chave, Saffron = tipos, Herb =
@@ -361,6 +375,17 @@ code, pre, .code-overlay, .code-input,
 .status-dot.cooking { background: rgb(var(--ember)); box-shadow: 0 0 0 3px rgb(var(--ember) / 0.20); }
 .status-dot.success { background: rgb(var(--herb));  box-shadow: 0 0 0 3px rgb(var(--herb) / 0.20); }
 .status-dot.error   { background: rgb(var(--wine));  box-shadow: 0 0 0 3px rgb(var(--wine) / 0.20); }
+
+/* Barra de status com destaque de erro — fundo amarelo claro, texto vinho. */
+.status-bar-error {
+  background: rgb(var(--wine) / 0.15);
+  border-color: rgb(var(--wine) / 0.85);
+}
+.status-bar-error .font-mono,
+.status-bar-error > span.text-ink {
+  color: rgb(var(--ember));
+  font-weight: 500;
+}
 
 /* === Botão ======================================================== */
 .btn {
