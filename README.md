@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/logo.svg" alt="almoçar" width="280" />
+</p>
+
 # ALMOÇAR
 
 **A**mbiente **L**údico de **M**onitoramento de **O**perações e **C**ódigo
