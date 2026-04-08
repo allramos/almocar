@@ -89,6 +89,18 @@ body {
   font-variation-settings: 'opsz' 18, 'SOFT' 0;
 }
 
+/* Desabilita ligatures de codificação no JetBrains Mono.
+   Evita que operadores como >= virem glifos estilizados (≥).
+   JetBrains Mono usa 'calt' para ligatures — precisamos desabilitá-la. */
+.font-mono, [style*="JetBrains Mono"],
+code, pre, .code-overlay, .code-input,
+.smallcaps, .panel-title .label, .panel-title .meta,
+.panel-action, .term-body, .code-line, .code-line *,
+.tok, .code-editor, .code-editor * {
+  font-variant-ligatures: none !important;
+  font-feature-settings: 'liga' 0, 'calt' 0 !important;
+}
+
 /* === Scrollbar ===================================================== */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
