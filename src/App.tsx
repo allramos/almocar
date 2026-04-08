@@ -14,6 +14,87 @@ import { TerminalPanel } from "./components/TerminalPanel";
 type Mode = "editing" | "running";
 type Theme = "dark" | "light";
 
+// ---------- Compartilhamento por URL (deflate nativo) ----------
+
+// Dicionário: tokens comuns → bytes de controle (0x01-0x1F, exceto 0x00/0x09/0x0A/0x0D)
+const TOKEN_DICT: [string, string][] = [
+  ['System.out.println', '\x01'], ['fimalgoritmo', '\x02'], ['console.log', '\x03'],
+  ['fimenquanto', '\x04'], ['#include', '\x05'], ['<stdio.h>', '\x06'],
+  ['function', '\x07'], ['escreva', '\x08'], ['inteiro', '\x0B'],
+  ['enquanto', '\x0C'], ['algoritmo', '\x0E'], ['println', '\x0F'],
+  ['return', '\x10'], ['printf', '\x11'], ['String', '\x12'],
+  ['public', '\x13'], ['static', '\x14'], ['fimse', '\x15'],
+  ['float', '\x16'], ['while', '\x17'], ['scanf', '\x18'],
+  ['senao', '\x19'], ['entao', '\x1A'], ['void', '\x1B'],
+  ['main', '\x1C'], ['leia', '\x1D'], ['para', '\x1E'],
+  ['fimpara', '\x1F'],
+];
+
+function dictEncode(s: string): string {
+  for (const [word, byte] of TOKEN_DICT) s = s.split(word).join(byte);
+  return s;
+}
+function dictDecode(s: string): string {
+  for (const [word, byte] of TOKEN_DICT) s = s.split(byte).join(word);
+  return s;
+}
+
+function minifyForShare(source: string): string {
+  return source
+    .split('\n')
+    .map(l => l.trimStart())
+    .filter(l => l.length > 0)
+    .join('\n');
+}
+
+async function compressToURL(langId: string, source: string): Promise<string> {
+  const payload = `${langId}\0${dictEncode(minifyForShare(source))}`;
+  const stream = new Blob([payload]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+  const buf = await new Response(stream).arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  const b64 = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `${window.location.origin}${window.location.pathname}#s=${b64}`;
+}
+
+async function shortenIfPossible(longURL: string): Promise<string> {
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return longURL;
+  try {
+    const res = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(longURL)}`);
+    if (!res.ok) return longURL;
+    const data = await res.json();
+    return data.shorturl ?? longURL;
+  } catch {
+    return longURL;
+  }
+}
+
+async function decompressFromURL(): Promise<{ langId: string; source: string } | null> {
+  try {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return null;
+    const params = new URLSearchParams(hash);
+    const s = params.get('s');
+    if (s) {
+      const b64 = s.replace(/-/g, '+').replace(/_/g, '/');
+      const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      const text = await new Response(stream).text();
+      const sep = text.indexOf('\0');
+      if (sep < 0) return null;
+      return { langId: text.slice(0, sep), source: dictDecode(text.slice(sep + 1)) };
+    }
+    // Formato legado (base64 simples)
+    const langId = params.get('lang');
+    const code = params.get('code');
+    if (!langId || !code) return null;
+    return { langId, source: decodeURIComponent(escape(atob(code))) };
+  } catch {
+    return null;
+  }
+}
+
 // ---------- Layout persistido ----------
 interface LayoutConfig {
   colLeft: number;   // fração da largura para coluna esquerda (0-1)
@@ -132,6 +213,20 @@ export default function App() {
     setLayout({ ...DEFAULT_LAYOUT });
     saveLayout({ ...DEFAULT_LAYOUT });
   }
+
+  // Carrega código compartilhado da URL (async por causa do deflate nativo).
+  useEffect(() => {
+    if (!window.location.hash) return;
+    decompressFromURL().then((shared) => {
+      if (shared) {
+        const formatted = getLanguage(shared.langId).format(shared.source);
+        setSource(formatted);
+        setLanguageId(shared.langId);
+        setExampleKey('');
+      }
+      history.replaceState(null, '', window.location.pathname);
+    });
+  }, []);
 
   // Aplica o tema na raiz do documento.
   useEffect(() => {
@@ -314,6 +409,11 @@ export default function App() {
         onLanguageChange={handleLanguageChange}
         onAbout={() => setAboutOpen(true)}
         onResetLayout={resetLayout}
+        onShare={async () => {
+          const longURL = await compressToURL(languageId, source);
+          const url = await shortenIfPossible(longURL);
+          await navigator.clipboard.writeText(url);
+        }}
       />
       {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
 
@@ -486,6 +586,7 @@ function Header({
   onLanguageChange,
   onAbout,
   onResetLayout,
+  onShare,
 }: {
   exampleKey: string;
   onExample: (k: string) => void;
@@ -498,7 +599,9 @@ function Header({
   onLanguageChange: (l: string) => void;
   onAbout: () => void;
   onResetLayout: () => void;
+  onShare: () => Promise<void>;
 }) {
+  const [copied, setCopied] = useState(false);
   const allLanguages = getAllLanguages();
   return (
     <header className="px-6 pt-5 pb-4 flex items-baseline gap-6 border-b border-bg-crust">
@@ -550,6 +653,17 @@ function Header({
           }
         >
           {theme === "dark" ? "☀" : "☾"}
+        </button>
+        <button
+          onClick={async () => {
+            setCopied(true);
+            await onShare();
+            setTimeout(() => setCopied(false), 2000);
+          }}
+          className="btn"
+          title="Copiar link de compartilhamento"
+        >
+          {copied ? '\u2713 Copiado!' : 'Compartilhar'}
         </button>
         <button
           onClick={onResetLayout}
