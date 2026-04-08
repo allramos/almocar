@@ -82,6 +82,8 @@ class Interpreter {
   pendingFoci: NonNullable<Step['focus']>[] = [];
   // Último escopo "vivo" (de uma função em execução), preservado para o passo final.
   lastLiveScope: Scope | undefined;
+  // Escopo do chamador (para que a função enxergue as variáveis do chamador).
+  callerScope: Scope | undefined;
   // Fila de tokens de entrada para scanf. Pré-alimentada por options.inputs.
   inputQueue: string[] = [];
   requestMoreInput: (message: string) => string | null;
@@ -127,12 +129,18 @@ class Interpreter {
   }
 
   // ===== Execução de função =====
-  execFunction(fn: FunctionDecl, args: number[]): number {
-    const scope = new Scope(this.globalScope);
+  execFunction(fn: FunctionDecl, args: number[], argBindings?: (Binding | undefined)[]): number {
+    const scope = new Scope(this.callerScope ?? this.globalScope);
     fn.params.forEach((p, i) => {
-      const addr = this.memory.allocLogical(1);
-      this.memory.write(addr, args[i] ?? 0);
-      scope.define(p.name, { type: p.type, address: addr });
+      const binding = argBindings?.[i];
+      if (binding && binding.type.kind === 'array') {
+        // Pass-by-reference: parâmetro aponta direto para o array do chamador
+        scope.define(p.name, { type: binding.type, address: binding.address });
+      } else {
+        const addr = this.memory.allocLogical(1);
+        this.memory.write(addr, args[i] ?? 0);
+        scope.define(p.name, { type: p.type, address: addr });
+      }
     });
     this.lastLiveScope = scope;
     try {
@@ -534,8 +542,26 @@ class Interpreter {
     // ===== Funções do usuário =====
     const fn = this.functions.get(name);
     if (!fn) throw new RuntimeError(`Função '${name}' não definida`, line);
-    const argVals = args.map(a => this.evalExpr(a, scope));
-    return this.execFunction(fn, argVals);
+    const argVals: number[] = [];
+    const argBindings: (Binding | undefined)[] = [];
+    for (let i = 0; i < args.length; i++) {
+      const a = args[i];
+      if (a.kind === 'Ident') {
+        const b = scope.lookup(a.name);
+        if (b && b.type.kind === 'array') {
+          argVals.push(b.address);
+          argBindings.push(b);
+          continue;
+        }
+      }
+      argVals.push(this.evalExpr(a, scope));
+      argBindings.push(undefined);
+    }
+    const prevCaller = this.callerScope;
+    this.callerScope = scope;
+    const result = this.execFunction(fn, argVals, argBindings);
+    this.callerScope = prevCaller;
+    return result;
   }
 
   execPrintf(args: Expr[], scope: Scope, line: number): number {
