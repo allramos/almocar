@@ -59,7 +59,7 @@ Escrito do zero em TypeScript, sem dependências externas:
 |--------|------|
 | `Ctrl+Enter` | Executar / Parar |
 | `Tab` / `Shift+Tab` | Indentar / des-indentar |
-| `Ctrl+Shift+F` | Formatar código (re-indentar) |
+| `Alt+Shift+F` | Formatar código (re-indentar) |
 | `Alt+↑/↓` | Mover linha(s) |
 | `Shift+Alt+↑/↓` | Copiar/duplicar linha(s) |
 | `Ctrl+Shift+K` | Remover linha(s) |
