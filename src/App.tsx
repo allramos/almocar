@@ -156,7 +156,10 @@ export default function App() {
       if (mode !== "running") return;
       if (isEditable(e.target)) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === "ArrowRight") {
+      if (e.key === ' ') {
+        e.preventDefault();
+        setPlaying((p) => !p);
+      } else if (e.key === "ArrowRight") {
         e.preventDefault();
         setStepIndex((i) => Math.min(steps.length - 1, i + 1));
       } else if (e.key === "ArrowLeft") {

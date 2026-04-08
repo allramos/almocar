@@ -123,6 +123,28 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
       return;
     }
 
+    // Enter após '{' → auto-fechar com '}'
+    if (e.key === 'Enter') {
+      const before = value.slice(0, start);
+      const after = value.slice(end);
+      const charBefore = before.trimEnd().slice(-1);
+      if (charBefore === '{') {
+        e.preventDefault();
+        // Calcula indentação da linha atual.
+        const lineStart = before.lastIndexOf('\n') + 1;
+        const currentLine = before.slice(lineStart);
+        const indent = currentLine.match(/^\s*/)?.[0] ?? '';
+        const inner = indent + '    ';
+        const newText = before + '\n' + inner + '\n' + indent + '}' + after;
+        onChange?.(newText);
+        const cursorPos = before.length + 1 + inner.length;
+        requestAnimationFrame(() => {
+          ta.selectionStart = ta.selectionEnd = cursorPos;
+        });
+        return;
+      }
+    }
+
     // Tab / Shift+Tab → indentação
     if (e.key !== 'Tab') return;
     e.preventDefault();

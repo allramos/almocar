@@ -2,13 +2,11 @@
   <img src="public/logo.svg" alt="almoçar" width="280" />
 </p>
 
-# ALMOÇAR
-
 **A**mbiente **L**údico de **M**onitoramento de **O**perações e **C**ódigo
 **A**lgorítmico **R**esponsivo.
 
 ALMOÇAR é um software web que ajuda alunos a entender, passo a passo, como
-algoritmos são executados. Ele recebe o código (C ou Portugol), mostra a memória,
+algoritmos são executados. Ele recebe o código, mostra a memória,
 as variáveis e as estruturas de dados em painéis coordenados e permite ao aluno
 avançar/retroceder cada instrução como em um teste de mesa interativo.
 

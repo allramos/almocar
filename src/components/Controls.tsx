@@ -31,11 +31,11 @@ export function Controls({
       </button>
 
       {playing ? (
-        <button onClick={onPause} disabled={disabled} className="btn btn-primary" title="Pausar">
+        <button onClick={onPause} disabled={disabled} className="btn btn-primary" title="Pausar (Espaço)">
           Pausar
         </button>
       ) : (
-        <button onClick={onPlay} disabled={disabled || total === 0} className="btn btn-primary" title="Reproduzir">
+        <button onClick={onPlay} disabled={disabled || total === 0} className="btn btn-primary" title="Reproduzir (Espaço)">
           Play
         </button>
       )}
