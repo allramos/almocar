@@ -54,6 +54,7 @@ export interface RunResult {
   needsInput?: boolean;
   inputPrompt?: string;
   inputConv?: string;
+  finalStorage?: Record<string, string>;
 }
 
 // ----- Configuração -----
@@ -65,6 +66,7 @@ const MAX_STEPS = 5000;
 export interface RunOptions {
   inputs?: string;
   requestMoreInput?: (message: string) => string | null;
+  initialStorage?: Record<string, string>;
 }
 
 export function run(program: Program, options: RunOptions = {}): RunResult {
@@ -95,6 +97,11 @@ class Interpreter {
     if (options.inputs) {
       this.inputQueue = options.inputs.split(/\s+/).filter((s) => s.length > 0);
     }
+    if (options.initialStorage) {
+      for (const [k, v] of Object.entries(options.initialStorage)) {
+        this.simulatedStorage.set(k, v);
+      }
+    }
     this.requestMoreInput =
       options.requestMoreInput ??
       ((msg) => (typeof window !== 'undefined' ? window.prompt(msg) : null));
@@ -111,7 +118,7 @@ class Interpreter {
       // Reaproveita o último escopo "vivo" para que as variáveis finais permaneçam visíveis.
       const finalScope = this.lastLiveScope ?? this.globalScope;
       this.recordStep(main.line, 'Execução concluída', finalScope, 'success');
-      return { steps: this.steps, output: this.output, ok: true };
+      return { steps: this.steps, output: this.output, ok: true, finalStorage: Object.fromEntries(this.simulatedStorage) };
     } catch (e: any) {
       if (e instanceof InputNeededSignal) {
         const scope = this.lastLiveScope ?? this.globalScope;
@@ -119,12 +126,13 @@ class Interpreter {
         return {
           steps: this.steps, output: this.output, ok: true,
           needsInput: true, inputPrompt: e.prompt, inputConv: e.conv,
+          finalStorage: Object.fromEntries(this.simulatedStorage),
         };
       }
       const msg = e instanceof RuntimeError ? e.message : (e?.message ?? String(e));
       const line = e instanceof RuntimeError ? e.line : (this.steps[this.steps.length - 1]?.line ?? 1);
       this.recordStep(line, `Erro: ${msg}`, this.globalScope, 'error', msg);
-      return { steps: this.steps, output: this.output, ok: false, error: msg };
+      return { steps: this.steps, output: this.output, ok: false, error: msg, finalStorage: Object.fromEntries(this.simulatedStorage) };
     }
   }
 
@@ -778,7 +786,7 @@ class Interpreter {
     const parts: string[] = [];
     for (const arg of args) {
       const v = this.evalExpr(arg, scope);
-      if (this.stringTable.has(v) && arg.kind === 'StringLit') {
+      if (this.stringTable.has(v)) {
         parts.push(this.stringTable.get(v)!);
       } else if (Number.isInteger(v)) {
         parts.push(String(Math.trunc(v)));
@@ -837,7 +845,13 @@ class Interpreter {
   // ===== localStorage simulado (JavaScript) =====
   private getStringArg(expr: Expr, scope: Scope): string {
     const v = this.evalExpr(expr, scope);
-    return this.stringTable.get(v) ?? String(v);
+    const s = this.stringTable.get(v);
+    if (s !== undefined) {
+      // Limpa entradas temporárias de StringLit para não poluir console.log
+      if (expr.kind === 'StringLit') this.stringTable.delete(v);
+      return s;
+    }
+    return String(v);
   }
 
   execStorageSetItem(args: Expr[], scope: Scope, line: number): number {
@@ -935,9 +949,11 @@ class Interpreter {
       const v = this.memory.read(addr);
       return { name, type: typeName(type), address: addr, value: `→ ${v}`, scalar: true };
     }
+    const rawVal = this.memory.read(addr);
+    const strVal = this.stringTable.get(rawVal);
     return {
       name, type: typeName(type), address: addr,
-      value: String(this.memory.read(addr)), scalar: true,
+      value: strVal !== undefined ? `"${strVal}"` : String(rawVal), scalar: true,
     };
   }
 

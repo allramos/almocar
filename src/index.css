@@ -680,3 +680,90 @@ select.menu-select:focus-visible {
   color: rgb(var(--ink-fade));
   font-size: 11px;
 }
+
+/* === Botão ativo (toggle) ========================================== */
+.btn.btn-active {
+  background: rgb(var(--ember) / 0.15);
+  border-color: rgb(var(--ember) / 0.5);
+  color: rgb(var(--ember));
+}
+
+/* === REPL (console interativo) ===================================== */
+.repl-body {
+  font-family: 'JetBrains Mono', monospace;
+  color: rgb(var(--ink));
+  cursor: text;
+}
+.repl-entry { margin-bottom: 2px; }
+.repl-input-line {
+  display: flex;
+  align-items: baseline;
+}
+.repl-prompt {
+  color: rgb(var(--ember));
+  user-select: none;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+.repl-code {
+  color: rgb(var(--ink));
+}
+.repl-output {
+  color: rgb(var(--ink-dim));
+  padding-left: 1.6em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.repl-error {
+  color: rgb(var(--danger, 220 50 47));
+  padding-left: 1.6em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.repl-input-area {
+  display: flex;
+  align-items: flex-start;
+}
+.repl-prompt-input {
+  padding-top: 0;
+  line-height: inherit;
+}
+.repl-input {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  outline: none;
+  font: inherit;
+  color: rgb(var(--ink));
+  caret-color: rgb(var(--ember));
+  padding: 0;
+  resize: none;
+  overflow: hidden;
+  min-height: 1.6em;
+}
+.repl-input::placeholder {
+  color: rgb(var(--ink-fade));
+  font-size: 11px;
+}
+.repl-hint {
+  color: rgb(var(--ink-fade));
+  font-size: 11px;
+  margin-top: 8px;
+  line-height: 1.7;
+}
+.repl-hint kbd {
+  display: inline-block;
+  background: rgb(var(--bg-soft));
+  border: 1px solid rgb(var(--bg-crust));
+  border-radius: 3px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 16px;
+}
+.repl-hint code {
+  background: rgb(var(--bg-soft));
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 11px;
+}

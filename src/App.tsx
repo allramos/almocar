@@ -10,6 +10,8 @@ import { Controls } from "./components/Controls";
 import { Mascot } from "./components/Mascot";
 import { TraceLog } from "./components/TraceLog";
 import { TerminalPanel } from "./components/TerminalPanel";
+import { ReplPanel } from "./components/ReplPanel";
+import type { VarSnapshot } from "./interpreter";
 
 type Mode = "editing" | "running";
 type Theme = "dark" | "light";
@@ -199,6 +201,9 @@ export default function App() {
   const [arrayZoom, setArrayZoom] = useState<number>(
     () => Number(localStorage.getItem("almocar.arrayZoom")) || 1,
   );
+  const [replMode, setReplMode] = useState(false);
+  const [replScope, setReplScope] = useState<VarSnapshot[]>([]);
+  const [replStorage, setReplStorage] = useState<Record<string, string> | undefined>();
 
   function changeFontSize(delta: number) {
     setFontSize((prev) => {
@@ -409,6 +414,11 @@ export default function App() {
     setCollectedInputs([]);
     setWaitingForInput(false);
     setInputConv("");
+    if (newLangId !== 'javascript') {
+      setReplMode(false);
+      setReplScope([]);
+      setReplStorage(undefined);
+    }
   }
 
   return (
@@ -428,6 +438,12 @@ export default function App() {
         onLanguageChange={handleLanguageChange}
         onAbout={() => setAboutOpen(true)}
         onResetLayout={resetLayout}
+        replMode={replMode}
+        onToggleRepl={() => {
+          setReplMode(r => !r);
+          setReplScope([]);
+          setReplStorage(undefined);
+        }}
         onNew={() => {
           setSource('');
           setExampleKey('');
@@ -467,7 +483,20 @@ export default function App() {
       </div>
 
       <main className="flex-1 flex gap-0 px-6 pb-3 min-h-0">
-        {/* I — Código */}
+        {/* I — Código / Console */}
+        {replMode ? (
+          <section style={{ width: `${layout.colLeft * 100}%`, minWidth: 200 }} className="flex flex-col min-h-0">
+            <ReplPanel
+              language={lang}
+              fontSize={fontSize}
+              onChangeFontSize={changeFontSize}
+              onScopeChange={(scope, storage) => {
+                setReplScope(scope);
+                setReplStorage(storage);
+              }}
+            />
+          </section>
+        ) : (
         <section className="panel code-panel flex flex-col min-h-0" style={{ width: `${layout.colLeft * 100}%`, minWidth: 200 }}>
           <div className="panel-title">
             <span className="chapter">I</span>
@@ -539,6 +568,7 @@ export default function App() {
             />
           </div>
         </section>
+        )}
 
         {/* Divider left|center */}
         <DragDivider direction="col" onDrag={(delta, total) => {
@@ -551,7 +581,7 @@ export default function App() {
             className="flex-shrink-0 min-h-0 flex"
             style={{ height: `${layout.midSplit * 100}%`, minHeight: 60 }}
           >
-            <ArrayView vars={current?.scope ?? []} zoom={arrayZoom} onZoomChange={changeArrayZoom} storage={current?.storage} />
+            <ArrayView vars={replMode ? replScope : (current?.scope ?? [])} zoom={arrayZoom} onZoomChange={changeArrayZoom} storage={replMode ? replStorage : current?.storage} />
           </div>
           <DragDivider direction="row" onDrag={(delta, total) => {
             updateLayout({ midSplit: Math.min(0.8, Math.max(0.15, layout.midSplit + delta / total)) });
@@ -577,7 +607,7 @@ export default function App() {
         {/* IV — Variáveis  +  V — Trace */}
         <section className="flex flex-col gap-0 min-h-0" style={{ width: `${layout.colRight * 100}%`, minWidth: 150 }}>
           <div className="flex-shrink-0 min-h-0" style={{ height: `${layout.rightSplit * 100}%`, minHeight: 60 }}>
-            <VariablesPanel vars={current?.scope ?? []} fontSize={fontSize} />
+            <VariablesPanel vars={replMode ? replScope : (current?.scope ?? [])} fontSize={fontSize} />
           </div>
           <DragDivider direction="row" onDrag={(delta, total) => {
             updateLayout({ rightSplit: Math.min(0.8, Math.max(0.15, layout.rightSplit + delta / total)) });
@@ -631,6 +661,8 @@ function Header({
   onNew,
   onShare,
   onDownload,
+  replMode,
+  onToggleRepl,
 }: {
   exampleKey: string;
   onExample: (k: string) => void;
@@ -646,6 +678,8 @@ function Header({
   onNew: () => void;
   onShare: () => Promise<void>;
   onDownload: () => void;
+  replMode: boolean;
+  onToggleRepl: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   const allLanguages = getAllLanguages();
@@ -664,6 +698,15 @@ function Header({
       <button onClick={onNew} className="btn">
         Novo
       </button>
+      {language.id === 'javascript' && (
+        <button
+          onClick={onToggleRepl}
+          className={`btn${replMode ? ' btn-active' : ''}`}
+          title={replMode ? 'Voltar ao editor' : 'Abrir console interativo (REPL)'}
+        >
+          {replMode ? '⌨ Editor' : '⟩_ Console'}
+        </button>
+      )}
 
       <div className="flex-1" />
 

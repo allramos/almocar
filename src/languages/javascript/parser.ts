@@ -57,17 +57,17 @@ class Parser {
     }
 
     // Statements top-level viram o corpo de "main"
-    if (topStmts.length > 0) {
-      const mainBody: BlockStmt = { kind: 'BlockStmt', stmts: topStmts, line: 1 };
-      functions.push({
-        kind: 'FunctionDecl',
-        name: 'main',
-        returnType: tVoid,
-        params: [],
-        body: mainBody,
-        line: 1,
-      });
-    }
+    // Mesmo sem statements, gera main() vazia para que o programa seja válido
+    // (necessário para o REPL quando só se declaram funções).
+    const mainBody: BlockStmt = { kind: 'BlockStmt', stmts: topStmts, line: 1 };
+    functions.push({
+      kind: 'FunctionDecl',
+      name: 'main',
+      returnType: tVoid,
+      params: [],
+      body: mainBody,
+      line: 1,
+    });
 
     return { kind: 'Program', functions };
   }
