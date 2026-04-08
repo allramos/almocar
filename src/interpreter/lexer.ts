@@ -26,6 +26,9 @@ const PUNCT_1 = '+-*/%=<>!&|^~?:.,;()[]{}#';
 
 export function tokenize(source: string): Token[] {
   const tokens: Token[] = [];
+  // Macros tipo-objeto (#define NAME corpo). Chave: nome; valor: tokens de
+  // substituição (já expandidos contra macros previamente definidos).
+  const macros = new Map<string, Token[]>();
   let i = 0, line = 1, col = 1;
   const n = source.length;
 
@@ -56,9 +59,38 @@ export function tokenize(source: string): Token[] {
       continue;
     }
 
-    // Diretivas de pré-processador (#include, #define) — ignoradas no MVP.
+    // Diretivas de pré-processador. Suportamos #define NOME corpo
+    // (macros tipo-objeto). Outras diretivas (ex.: #include) são ignoradas.
     if (ch === '#') {
-      while (i < n && at() !== '\n') advance();
+      advance(); // consome '#'
+      while (i < n && (at() === ' ' || at() === '\t')) advance();
+      let directive = '';
+      while (i < n && isIdentCont(at())) { directive += at(); advance(); }
+      if (directive === 'define') {
+        while (i < n && (at() === ' ' || at() === '\t')) advance();
+        let macroName = '';
+        while (i < n && isIdentCont(at())) { macroName += at(); advance(); }
+        // Pula espaços, depois coleta o restante da linha como corpo.
+        while (i < n && (at() === ' ' || at() === '\t')) advance();
+        let body = '';
+        while (i < n && at() !== '\n') { body += at(); advance(); }
+        if (macroName.length > 0) {
+          // Tokeniza o corpo recursivamente e expande macros já conhecidos.
+          const raw = tokenize(body).filter((t) => t.kind !== 'EOF');
+          const expanded: Token[] = [];
+          for (const t of raw) {
+            if (t.kind === 'IDENT' && macros.has(t.value)) {
+              expanded.push(...macros.get(t.value)!);
+            } else {
+              expanded.push(t);
+            }
+          }
+          macros.set(macroName, expanded);
+        }
+      } else {
+        // Outras diretivas: descarta o restante da linha.
+        while (i < n && at() !== '\n') advance();
+      }
       continue;
     }
 
@@ -68,6 +100,14 @@ export function tokenize(source: string): Token[] {
     if (isIdentStart(ch)) {
       let s = '';
       while (i < n && isIdentCont(at())) { s += at(); advance(); }
+      // Expansão de macro: substitui o identificador pelos tokens gravados,
+      // atribuindo a posição do uso (linha/coluna) a cada token expandido.
+      if (macros.has(s)) {
+        for (const t of macros.get(s)!) {
+          tokens.push({ ...t, line: startLine, col: startCol });
+        }
+        continue;
+      }
       tokens.push({
         kind: KEYWORDS.has(s) ? 'KEYWORD' : 'IDENT',
         value: s, line: startLine, col: startCol,
