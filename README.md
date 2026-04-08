@@ -2,9 +2,6 @@
   <img src="public/logo.svg" alt="almoçar" width="280" />
 </p>
 
-<p align="center">
-  <a href="https://allramos.github.io/almocar/">🔗 Acesse o ALMOÇAR online</a>
-</p>
 
 **A**mbiente **L**údico de **M**onitoramento de **O**perações e **C**ódigo
 **A**lgorítmico **R**esponsivo.
@@ -15,6 +12,10 @@ as variáveis e as estruturas de dados em painéis coordenados e permite ao alun
 avançar/retroceder cada instrução como em um teste de mesa interativo.
 
 ---
+
+<p align="center">
+  <a href="https://allramos.github.io/almocar/">🔗 Acesse o ALMOÇAR online</a>
+</p>
 
 ## O que está pronto
 
