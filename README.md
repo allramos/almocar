@@ -93,6 +93,20 @@ interpretador) e front-ends independentes por linguagem:
 - **Controle de tamanho da fonte** no editor com botões A−/A+ e persistência
   via `localStorage`.
 
+### Compartilhamento por URL
+
+O botão **Compartilhar** copia um link que contém o código-fonte e a linguagem
+selecionada codificados diretamente na URL.
+
+- **Compressão:** o código é minificado (remoção de indentação e linhas em branco),
+  palavras-chave são substituídas por bytes curtos via dicionário de tokens,
+  e o resultado é comprimido com `deflate-raw` (API nativa `CompressionStream`).
+- **Encurtamento automático:** em produção (domínio público), o link é encurtado via
+  [is.gd](https://is.gd), resultando em URLs de ~25 caracteres. Em `localhost`
+  o link completo é copiado.
+- **Ao abrir um link compartilhado:** o código é descomprimido, decodificado e
+  automaticamente re-formatado pelo formatador da linguagem.
+
 ### Controles de execução
 
 - Botões: reiniciar, anterior, próximo, play/pause, slider de progresso.
@@ -274,7 +288,6 @@ automaticamente no seletor da interface.
 - Suporte a `struct`, `typedef`, `malloc`/`free` (C).
 - Novas linguagens: Python (subset), Pascal.
 - Modo professor com biblioteca de exercícios.
-- Compartilhar execução por URL.
 
 ---
 
