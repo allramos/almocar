@@ -223,6 +223,10 @@ export default function App() {
   function resetLayout() {
     setLayout({ ...DEFAULT_LAYOUT });
     saveLayout({ ...DEFAULT_LAYOUT });
+    setFontSize(12.5);
+    localStorage.setItem("almocar.fontSize", "12.5");
+    setArrayZoom(1);
+    localStorage.setItem("almocar.arrayZoom", "1");
   }
 
   // Carrega código compartilhado da URL (async por causa do deflate nativo).
