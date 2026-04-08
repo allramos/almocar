@@ -337,7 +337,7 @@ export default function App() {
             </span>
             <span className="flex items-center gap-1 ml-auto">
               <button
-                onClick={() => changeFontSize(-0.5)}
+                onClick={() => changeFontSize(-1)}
                 className="panel-action"
                 title="Diminuir fonte"
                 style={{ padding: '0 5px', minWidth: 0 }}
@@ -348,7 +348,7 @@ export default function App() {
                 {fontSize}px
               </span>
               <button
-                onClick={() => changeFontSize(0.5)}
+                onClick={() => changeFontSize(1)}
                 className="panel-action"
                 title="Aumentar fonte"
                 style={{ padding: '0 5px', minWidth: 0 }}
