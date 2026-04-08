@@ -103,13 +103,13 @@ class Parser {
   parseParam(): Param {
     const type = this.parseBaseType();
     const name = this.expect('IDENT').value;
-    // arrays como parâmetros: tratar como ponteiro
-    if (this.match('PUNCT', '[')) {
-      // pode ter expressão de tamanho — descarta
+    // arrays como parâmetros: tratar como ponteiro (suporta múltiplas dimensões)
+    let pType = type;
+    while (this.match('PUNCT', '[')) {
       while (!this.match('PUNCT', ']')) this.next();
-      return { name, type: tPtr(type) };
+      pType = tPtr(pType);
     }
-    return { name, type };
+    return { name, type: pType };
   }
 
   parseBlock(): BlockStmt {
