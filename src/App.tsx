@@ -443,7 +443,7 @@ export default function App() {
 
       <main className="flex-1 flex gap-0 px-6 pb-3 min-h-0">
         {/* I — Código */}
-        <section className="panel flex flex-col min-h-0" style={{ width: `${layout.colLeft * 100}%`, minWidth: 200 }}>
+        <section className="panel code-panel flex flex-col min-h-0" style={{ width: `${layout.colLeft * 100}%`, minWidth: 200 }}>
           <div className="panel-title">
             <span className="chapter">I</span>
             <span className="label">Código</span>

@@ -12,7 +12,7 @@ const TYPES = new Set([
   'let', 'const', 'var',
   'true', 'false', 'null', 'undefined',
   'Number', 'String', 'Boolean', 'Array', 'Object',
-  'Math', 'console', 'JSON',
+  'Math', 'console', 'JSON', 'localStorage',
 ]);
 const PUNCT = new Set(['(', ')', '{', '}', '[', ']', ',', ';', ':', '?', '.']);
 const OP_CHARS = '+-*/%=<>!&|^~';

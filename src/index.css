@@ -13,6 +13,7 @@
   --bg-soft:   27 30 37;     /* #1b1e25 */
   --bg-crust:  44 49 60;     /* #2c313c — borda mais visível */
   --bg-inset:  10 12 16;     /* #0a0c10 */
+  --bg-code:   0 0 0;         /* #000000 — fundo do editor */
 
   /* Hierarquia tipográfica com contraste WCAG AA contra --bg-panel.
      Antes: ink-dim/mute estavam abaixo de 4.5:1 e desapareciam. */
@@ -51,6 +52,7 @@
   --bg-soft:   240 237 230;
   --bg-crust:  220 215 204;
   --bg-inset:  234 230 220;
+  --bg-code:   255 253 248;   /* mesmo que bg-panel no claro */
 
   --ink:        38 36 32;    /* #262420 */
   --ink-dim:    96 92 84;
@@ -146,6 +148,9 @@ code, pre, .code-overlay, .code-input,
   background: rgb(var(--bg-panel));
   border: 1px solid rgb(var(--bg-crust));
   border-radius: 6px;
+}
+.panel.code-panel {
+  background: rgb(var(--bg-code));
 }
 
 .panel-title {

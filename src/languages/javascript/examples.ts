@@ -39,8 +39,26 @@ if (n % 2 == 0) {
 }
 `;
 
+export const localStorageExample = `localStorage.setItem("nome", "Maria");
+localStorage.setItem("idade", "25");
+localStorage.setItem("cidade", "Recife");
+
+let nome = localStorage.getItem("nome");
+let idade = localStorage.getItem("idade");
+
+console.log("Nome:", nome);
+console.log("Idade:", idade);
+
+localStorage.removeItem("cidade");
+
+localStorage.setItem("idade", "26");
+
+console.log("Idade atualizada:", localStorage.getItem("idade"));
+`;
+
 export const examples: Record<string, { name: string; code: string }> = {
-  vetorSoma: { name: 'Soma de vetor',             code: vetorSomaExample },
-  matriz:    { name: 'Matriz 3×5: menor e maior', code: matrizExample },
-  leitura:   { name: 'Leitura com prompt',         code: leituraExample },
+  vetorSoma:    { name: 'Soma de vetor',             code: vetorSomaExample },
+  matriz:       { name: 'Matriz 3×5: menor e maior', code: matrizExample },
+  leitura:      { name: 'Leitura com prompt',         code: leituraExample },
+  localStorage: { name: 'localStorage simulado',      code: localStorageExample },
 };
