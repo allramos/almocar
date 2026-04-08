@@ -10,7 +10,7 @@ export function VariablesPanel({ vars }: Props) {
   return (
     <div className="panel flex flex-col h-full">
       <div className="panel-title">
-        <span className="chapter">III</span>
+        <span className="chapter">IV</span>
         <span className="label">Variáveis</span>
         <span className="meta">{scalars.length}</span>
       </div>

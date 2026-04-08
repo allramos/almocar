@@ -7,7 +7,7 @@ import { ArrayView } from "./components/ArrayView";
 import { Controls } from "./components/Controls";
 import { Mascot } from "./components/Mascot";
 import { TraceLog } from "./components/TraceLog";
-import { OutputPanel } from "./components/OutputPanel";
+import { TerminalPanel } from "./components/TerminalPanel";
 import { formatC } from "./formatC";
 
 type Mode = "editing" | "running";
@@ -27,6 +27,9 @@ export default function App() {
   );
   const [language, setLanguage] = useState<string>("c");
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [collectedInputs, setCollectedInputs] = useState<string[]>([]);
+  const [waitingForInput, setWaitingForInput] = useState(false);
+  const [inputConv, setInputConv] = useState('');
   const playRef = useRef<number | null>(null);
 
   // Aplica o tema na raiz do documento.
@@ -66,30 +69,42 @@ export default function App() {
   }, [playing, stepIndex, steps.length, speed]);
 
   function cozinhar() {
-    // Se o código usa scanf, oferece ao aluno um único prompt onde ele
-    // digita todos os valores de entrada (separados por espaço ou quebra de
-    // linha). Caso ele entre menos valores do que o necessário, o
-    // interpretador volta a perguntar via window.prompt.
-    let inputs: string | undefined;
-    if (/\bscanf\s*\(/.test(source)) {
-      const raw = window.prompt(
-        "Este código usa scanf. Informe os valores de entrada separados por espaço ou quebra de linha:",
-        "",
-      );
-      if (raw === null) return; // cancelado
-      inputs = raw;
-    }
-    const result = compileAndRun(source, inputs !== undefined ? { inputs } : {});
+    setCollectedInputs([]);
+    executeWith([]);
+  }
+
+  function executeWith(inputs: string[], jumpToEnd = false) {
+    const result = compileAndRun(source, {
+      inputs: inputs.join(' '),
+      requestMoreInput: () => null,
+    });
     setSteps(result.steps);
-    setStepIndex(0);
     setMode("running");
     setPlaying(false);
-    setError(result.ok ? null : (result.error ?? "Erro desconhecido"));
+    if (result.needsInput) {
+      setWaitingForInput(true);
+      setInputConv(result.inputConv ?? '');
+      setStepIndex(result.steps.length - 1);
+      setError(null);
+    } else {
+      setWaitingForInput(false);
+      setInputConv('');
+      setStepIndex(jumpToEnd ? Math.max(0, result.steps.length - 1) : 0);
+      setError(result.ok ? null : (result.error ?? "Erro desconhecido"));
+    }
+  }
+
+  function handleInputSubmit(value: string) {
+    const newInputs = [...collectedInputs, value];
+    setCollectedInputs(newInputs);
+    executeWith(newInputs, true);
   }
 
   function voltarEditar() {
     setMode("editing");
     setPlaying(false);
+    setWaitingForInput(false);
+    setInputConv('');
   }
 
   function formatarCodigo() {
@@ -127,6 +142,9 @@ export default function App() {
     setSteps([]);
     setStepIndex(0);
     setError(null);
+    setCollectedInputs([]);
+    setWaitingForInput(false);
+    setInputConv('');
   }
 
   return (
@@ -158,7 +176,7 @@ export default function App() {
       </div>
 
       <main className="flex-1 grid gap-3 px-6 pb-3 grid-cols-12 min-h-0">
-        {/* Código */}
+        {/* I — Código */}
         <section className="col-span-12 lg:col-span-4 panel flex flex-col min-h-0">
           <div className="panel-title">
             <span className="chapter">I</span>
@@ -203,24 +221,27 @@ export default function App() {
           </div>
         </section>
 
-        {/* Estruturas + variáveis. A área de estruturas se ajusta ao
-            tamanho do conteúdo (com um teto), permitindo que as variáveis
-            ocupem o espaço restante quando a matriz é pequena. */}
+        {/* II — Estruturas  +  III — Terminal */}
         <section className="col-span-12 lg:col-span-5 flex flex-col gap-3 min-h-0">
-          <div className="flex-shrink min-h-0 flex" style={{ maxHeight: "65%" }}>
+          <div className="flex-shrink min-h-0 flex" style={{ maxHeight: "55%" }}>
             <ArrayView vars={current?.scope ?? []} />
           </div>
           <div className="flex-1 min-h-0">
-            <VariablesPanel vars={current?.scope ?? []} />
+            <TerminalPanel
+              output={current?.output ?? ""}
+              waitingForInput={waitingForInput && stepIndex === steps.length - 1}
+              inputConv={inputConv}
+              onSubmit={handleInputSubmit}
+            />
           </div>
         </section>
 
-        {/* Saída + trace */}
+        {/* IV — Variáveis  +  V — Trace */}
         <section className="col-span-12 lg:col-span-3 flex flex-col gap-3 min-h-0">
           <div className="flex-1 min-h-0">
-            <OutputPanel output={current?.output ?? ""} />
+            <VariablesPanel vars={current?.scope ?? []} />
           </div>
-          <div className="flex-[1.6] min-h-0">
+          <div className="flex-[1.4] min-h-0">
             <TraceLog
               steps={visSteps}
               current={visStepIndex}

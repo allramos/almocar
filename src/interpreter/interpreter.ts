@@ -24,6 +24,9 @@ class ReturnSignal { constructor(public value: number) {} }
 export class RuntimeError extends Error {
   constructor(message: string, public line: number) { super(message); }
 }
+export class InputNeededSignal extends Error {
+  constructor(public prompt: string, public conv: string, public line: number) { super('Input needed'); }
+}
 
 // ----- Escopo -----
 interface Binding { type: CType; address: number; }
@@ -48,6 +51,9 @@ export interface RunResult {
   output: string;
   ok: boolean;
   error?: string;
+  needsInput?: boolean;
+  inputPrompt?: string;
+  inputConv?: string;
 }
 
 // ----- Configuração -----
@@ -103,6 +109,14 @@ class Interpreter {
       this.recordStep(main.line, 'Execução concluída', finalScope, 'success');
       return { steps: this.steps, output: this.output, ok: true };
     } catch (e: any) {
+      if (e instanceof InputNeededSignal) {
+        const scope = this.lastLiveScope ?? this.globalScope;
+        this.recordStep(e.line, 'Aguardando entrada do usuário…', scope);
+        return {
+          steps: this.steps, output: this.output, ok: true,
+          needsInput: true, inputPrompt: e.prompt, inputConv: e.conv,
+        };
+      }
       const msg = e instanceof RuntimeError ? e.message : (e?.message ?? String(e));
       const line = e instanceof RuntimeError ? e.line : (this.steps[this.steps.length - 1]?.line ?? 1);
       this.recordStep(line, `Erro: ${msg}`, this.globalScope, 'error', msg);
@@ -502,11 +516,11 @@ class Interpreter {
 
   // Lê o próximo token da fila de entrada. Se a fila estiver vazia, solicita
   // mais valores ao usuário (window.prompt por padrão) e re-tokeniza.
-  nextInputToken(promptMsg: string, line: number): string {
+  nextInputToken(promptMsg: string, line: number, conv: string = '?'): string {
     while (this.inputQueue.length === 0) {
       const raw = this.requestMoreInput(promptMsg);
       if (raw === null) {
-        throw new RuntimeError(`scanf: leitura cancelada pelo usuário`, line);
+        throw new InputNeededSignal(promptMsg, conv, line);
       }
       const tokens = raw.split(/\s+/).filter((s) => s.length > 0);
       if (tokens.length === 0) continue;
@@ -537,7 +551,7 @@ class Interpreter {
       const destAddr = this.evalExpr(args[argi++], scope);
       const promptMsg = `Entrada para scanf("${fmt.replace(/\n/g, '\\n')}") — valor #${read + 1} (%${conv})`;
       if (conv === 's') {
-        const tok = this.nextInputToken(promptMsg, line);
+        const tok = this.nextInputToken(promptMsg, line, conv);
         for (let k = 0; k < tok.length; k++) {
           this.memory.write(destAddr + k, tok.charCodeAt(k));
         }
@@ -546,7 +560,7 @@ class Interpreter {
         read++;
         continue;
       }
-      const tok = this.nextInputToken(promptMsg, line);
+      const tok = this.nextInputToken(promptMsg, line, conv);
       let value: number;
       switch (conv) {
         case 'd': case 'i': {

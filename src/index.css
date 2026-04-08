@@ -403,17 +403,6 @@ body {
   background: rgb(var(--bg-crust));
 }
 
-/* === Painel de saída (stdout) ===================================== */
-.receipt {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  line-height: 20px;
-  color: rgb(var(--ink));
-  padding: 12px 14px;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
 /* === Slider ======================================================= */
 input[type="range"] {
   -webkit-appearance: none;
@@ -526,4 +515,55 @@ select.menu-select:focus-visible {
 .code-editor textarea.code-input::selection {
   background: rgb(var(--ember) / 0.30);
   color: transparent;
+}
+
+/* === Terminal (stdin+stdout unificado) ============================= */
+.term-body {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 20px;
+  color: rgb(var(--ink));
+  padding: 10px 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  cursor: text;
+}
+.term-output {
+  /* herda font/color do .term-body */
+}
+.term-input-line {
+  /* inline para ficar no fluxo do texto (após o printf) */
+}
+.term-input {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgb(var(--ember) / 0.5);
+  outline: none;
+  font: inherit;
+  color: rgb(var(--ember));
+  caret-color: rgb(var(--ember));
+  padding: 0 1px;
+  min-width: 2ch;
+  max-width: 20ch;
+}
+.term-input::placeholder {
+  color: rgb(var(--ink-fade));
+  font-size: 10px;
+}
+.term-type-badge {
+  display: inline-block;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: rgb(var(--ember));
+  padding: 0 5px;
+  border: 1px solid rgb(var(--ember) / 0.25);
+  border-radius: 2px;
+  margin-left: 6px;
+  vertical-align: middle;
+  white-space: nowrap;
+  line-height: 16px;
+}
+.term-empty {
+  color: rgb(var(--ink-fade));
+  font-size: 11px;
 }
