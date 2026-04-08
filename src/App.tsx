@@ -424,6 +424,17 @@ export default function App() {
         onLanguageChange={handleLanguageChange}
         onAbout={() => setAboutOpen(true)}
         onResetLayout={resetLayout}
+        onNew={() => {
+          setSource('');
+          setExampleKey('');
+          setMode('editing');
+          setSteps([]);
+          setStepIndex(0);
+          setError(null);
+          setCollectedInputs([]);
+          setWaitingForInput(false);
+          setInputConv('');
+        }}
         onShare={async () => {
           const longURL = await compressToURL(languageId, source);
           const url = await shortenIfPossible(longURL);
@@ -603,6 +614,7 @@ function Header({
   onLanguageChange,
   onAbout,
   onResetLayout,
+  onNew,
   onShare,
 }: {
   exampleKey: string;
@@ -616,6 +628,7 @@ function Header({
   onLanguageChange: (l: string) => void;
   onAbout: () => void;
   onResetLayout: () => void;
+  onNew: () => void;
   onShare: () => Promise<void>;
 }) {
   const [copied, setCopied] = useState(false);
@@ -631,6 +644,9 @@ function Header({
 
       <button onClick={onAbout} className="btn">
         Sobre
+      </button>
+      <button onClick={onNew} className="btn">
+        Novo
       </button>
 
       <div className="flex-1" />
@@ -654,6 +670,9 @@ function Header({
           className="menu-select min-w-[200px]"
           title="Exemplo"
         >
+          {exampleKey === '' && (
+            <option value="" disabled>— selecione um exemplo —</option>
+          )}
           {Object.entries(language.examples).map(([k, v]) => (
             <option key={k} value={k}>
               {v.name}
