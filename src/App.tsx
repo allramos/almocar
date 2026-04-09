@@ -127,15 +127,18 @@ function saveLayout(l: LayoutConfig) {
 
 function DragDivider({
   direction,
+  onDragStart,
   onDrag,
 }: {
   direction: "col" | "row";
+  onDragStart?: () => void;
   onDrag: (delta: number, total: number) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
-  const startDrag = useCallback(
+  const beginDrag = useCallback(
     (startPos: number) => {
+      onDragStart?.();
       const parent = ref.current?.parentElement;
       if (!parent) return;
       const total =
@@ -172,23 +175,23 @@ function DragDivider({
       window.addEventListener("touchmove", onTouchMove, { passive: false });
       window.addEventListener("touchend", onTouchEnd);
     },
-    [direction, onDrag],
+    [direction, onDrag, onDragStart],
   );
 
   const onMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      startDrag(direction === "col" ? e.clientX : e.clientY);
+      beginDrag(direction === "col" ? e.clientX : e.clientY);
     },
-    [direction, startDrag],
+    [direction, beginDrag],
   );
 
-  const onTouchStart = useCallback(
+  const onTouchStartHandler = useCallback(
     (e: React.TouchEvent) => {
       const touch = e.touches[0];
-      startDrag(direction === "col" ? touch.clientX : touch.clientY);
+      beginDrag(direction === "col" ? touch.clientX : touch.clientY);
     },
-    [direction, startDrag],
+    [direction, beginDrag],
   );
 
   return (
@@ -196,7 +199,7 @@ function DragDivider({
       ref={ref}
       className={`drag-divider drag-divider-${direction}`}
       onMouseDown={onMouseDown}
-      onTouchStart={onTouchStart}
+      onTouchStart={onTouchStartHandler}
     />
   );
 }
@@ -231,6 +234,11 @@ export default function App() {
   const [arrayZoom, setArrayZoom] = useState<number>(
     () => Number(localStorage.getItem("almocar.arrayZoom")) || 1,
   );
+  const [mobileHeights, setMobileHeights] = useState<[number, number, number]>([320, 300, 300]);
+  const mobileHeightsRef = useRef(mobileHeights);
+  useEffect(() => { mobileHeightsRef.current = mobileHeights; }, [mobileHeights]);
+  const dragStartHeights = useRef<[number, number, number]>([320, 300, 300]);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 1024;
   const [replMode, setReplMode] = useState(false);
   const [replScope, setReplScope] = useState<VarSnapshot[]>([]);
   const [replStorage, setReplStorage] = useState<Record<string, string> | undefined>();
@@ -553,7 +561,11 @@ export default function App() {
       <main id="main-content" className="flex-1 flex gap-0 px-6 pb-3 min-h-0 responsive-main">
         {/* I — Código / Console */}
         {replMode ? (
-          <section style={{ width: `${layout.colLeft * 100}%`, minWidth: 200 }} className="flex flex-col min-h-0">
+          <section style={{
+            width: isMobile ? '100%' : `${layout.colLeft * 100}%`,
+            minWidth: isMobile ? 0 : 200,
+            ...(isMobile ? { height: mobileHeights[0] } : {}),
+          }} className="flex flex-col min-h-0">
             <ReplPanel
               language={lang}
               fontSize={fontSize}
@@ -565,7 +577,11 @@ export default function App() {
             />
           </section>
         ) : (
-        <section className="panel code-panel flex flex-col min-h-0" style={{ width: `${layout.colLeft * 100}%`, minWidth: 200 }}>
+        <section className="panel code-panel flex flex-col min-h-0" style={{
+          width: isMobile ? '100%' : `${layout.colLeft * 100}%`,
+          minWidth: isMobile ? 0 : 200,
+          ...(isMobile ? { height: mobileHeights[0] } : {}),
+        }}>
           <div className="panel-title">
             <span className="chapter">I</span>
             <span className="label">Código</span>
@@ -639,12 +655,25 @@ export default function App() {
         )}
 
         {/* Divider left|center */}
-        <DragDivider direction="col" onDrag={(delta, total) => {
-          updateLayout({ colLeft: Math.min(0.6, Math.max(0.15, layout.colLeft + delta / total)) });
-        }} />
+        <DragDivider
+          direction={isMobile ? "row" : "col"}
+          onDragStart={() => { dragStartHeights.current = [...mobileHeightsRef.current]; }}
+          onDrag={(delta, total) => {
+            if (isMobile) {
+              const s = dragStartHeights.current;
+              setMobileHeights([Math.max(150, s[0] + delta), s[1], s[2]]);
+            } else {
+              updateLayout({ colLeft: Math.min(0.6, Math.max(0.15, layout.colLeft + delta / total)) });
+            }
+          }}
+        />
 
         {/* II — Estruturas  +  III — Terminal */}
-        <section className="flex flex-col gap-0 min-h-0" style={{ width: `${(1 - layout.colLeft - layout.colRight) * 100}%`, minWidth: 200 }}>
+        <section className="flex flex-col gap-0 min-h-0" style={{
+          width: isMobile ? '100%' : `${(1 - layout.colLeft - layout.colRight) * 100}%`,
+          minWidth: isMobile ? 0 : 200,
+          ...(isMobile ? { height: mobileHeights[1] } : {}),
+        }}>
           <div
             className="flex-shrink-0 min-h-0 flex"
             style={{ height: `${layout.midSplit * 100}%`, minHeight: 60 }}
@@ -668,12 +697,25 @@ export default function App() {
         </section>
 
         {/* Divider center|right */}
-        <DragDivider direction="col" onDrag={(delta, total) => {
-          updateLayout({ colRight: Math.min(0.5, Math.max(0.12, layout.colRight - delta / total)) });
-        }} />
+        <DragDivider
+          direction={isMobile ? "row" : "col"}
+          onDragStart={() => { dragStartHeights.current = [...mobileHeightsRef.current]; }}
+          onDrag={(delta, total) => {
+            if (isMobile) {
+              const s = dragStartHeights.current;
+              setMobileHeights([s[0], Math.max(150, s[1] + delta), s[2]]);
+            } else {
+              updateLayout({ colRight: Math.min(0.5, Math.max(0.12, layout.colRight - delta / total)) });
+            }
+          }}
+        />
 
         {/* IV — Variáveis  +  V — Trace */}
-        <section className="flex flex-col gap-0 min-h-0" style={{ width: `${layout.colRight * 100}%`, minWidth: 150 }}>
+        <section className="flex flex-col gap-0 min-h-0" style={{
+          width: isMobile ? '100%' : `${layout.colRight * 100}%`,
+          minWidth: isMobile ? 0 : 150,
+          ...(isMobile ? { height: mobileHeights[2] } : {}),
+        }}>
           <div className="flex-shrink-0 min-h-0" style={{ height: `${layout.rightSplit * 100}%`, minHeight: 60 }}>
             <VariablesPanel vars={replMode ? replScope : (current?.scope ?? [])} fontSize={fontSize} />
           </div>
@@ -772,12 +814,13 @@ function Header({
         almo<span className="accent">ç</span>ar
       </h1>
       <span className="smallcaps text-ink-fade hidden lg:inline header-tagline">
-        execução passo a passo · caderno editorial
+        execução passo a passo ·
       </span>
-
-      <button onClick={onAbout} className="btn">
+      <button onClick={onAbout} className="header-nav-link">
         Sobre
       </button>
+
+      <div className="header-spacer flex-1" />
       <button onClick={onNew} className="btn">
         Novo
       </button>
@@ -791,9 +834,7 @@ function Header({
         </button>
       )}
 
-      <div className="flex-1" />
-
-      <div className="flex items-center gap-2">
+      <div className="header-selects-row flex items-center gap-2 min-w-0">
         <select
           value={language.id}
           onChange={(e) => onLanguageChange(e.target.value)}
@@ -809,7 +850,7 @@ function Header({
         <select
           value={exampleKey}
           onChange={(e) => onExample(e.target.value)}
-          className="menu-select min-w-[200px]"
+          className="menu-select example-select min-w-[200px] max-w-[300px]"
           title="Exemplo"
         >
           {exampleKey === '' && (
