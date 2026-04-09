@@ -20,5 +20,5 @@ export interface Language {
   /** Configuração de syntax highlighting para o editor. */
   highlight: HighlightConfig;
   /** Exemplos disponíveis para o selector. */
-  examples: Record<string, { name: string; code: string }>;
+  examples: Record<string, { name: string; code: string; description?: string }>;
 }

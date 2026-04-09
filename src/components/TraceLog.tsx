@@ -28,8 +28,11 @@ export function TraceLog({ steps, current, onSelect, fontSize = 12.5 }: Props) {
       </div>
       <div ref={ref} className="px-2 py-1 overflow-auto flex-1">
         {steps.length === 0 && (
-          <div className="text-ink-fade text-xs font-mono py-2 px-2">
-            Nenhum passo registrado.
+          <div className="empty-state">
+            <div className="empty-state-icon">…</div>
+            <div className="empty-state-text">
+              Cada passo da execução será listado aqui com linha e descrição
+            </div>
           </div>
         )}
         {steps.map((s, i) => {

@@ -44,8 +44,11 @@ export function ArrayView({ vars, zoom = 1, onZoomChange, storage }: Props) {
       </div>
       <div className="px-4 pb-4 pt-4 overflow-auto flex-1 space-y-5" style={{ zoom }}>
         {arrays.length === 0 && storageEntries.length === 0 && (
-          <div className="text-ink-fade text-xs px-1 py-2 font-mono">
-            Nenhum vetor ou matriz no escopo.
+          <div className="empty-state">
+            <div className="empty-state-icon">[ ]</div>
+            <div className="empty-state-text">
+              Vetores e matrizes serão visualizados aqui com destaque de leitura e escrita
+            </div>
           </div>
         )}
         {arrays.map(v => (

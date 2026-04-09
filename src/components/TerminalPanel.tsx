@@ -98,7 +98,12 @@ export function TerminalPanel({ output, waitingForInput, inputConv, onSubmit, fo
 
         {/* Placeholder quando vazio */}
         {!output && !waitingForInput && (
-          <span className="term-empty">sem saída</span>
+          <div className="empty-state">
+            <div className="empty-state-icon">_</div>
+            <div className="empty-state-text">
+              A saída do programa (printf, println) aparecerá aqui
+            </div>
+          </div>
         )}
       </div>
     </div>

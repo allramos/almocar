@@ -17,8 +17,11 @@ export function VariablesPanel({ vars, fontSize = 12.5 }: Props) {
       </div>
       <div className="px-4 pt-3 pb-3 overflow-auto flex-1 space-y-1" style={{ fontSize: `${fontSize}px` }}>
         {scalars.length === 0 && (
-          <div className="text-ink-fade text-xs font-mono py-2">
-            Nenhuma variável escalar no escopo.
+          <div className="empty-state">
+            <div className="empty-state-icon">x</div>
+            <div className="empty-state-text">
+              Variáveis escalares aparecerão aqui durante a execução
+            </div>
           </div>
         )}
         {scalars.map(v => {

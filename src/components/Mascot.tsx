@@ -20,7 +20,7 @@ export function Mascot({ mood, message, stepIndex, totalSteps }: Props) {
         {labelFor(mood)}
       </span>
       <span className="h-4 w-px bg-bg-crust" />
-      <span className="text-ink text-[13px] truncate flex-1 font-mono">
+      <span className="status-bar-message truncate flex-1">
         {message ?? defaultMessage(mood)}
       </span>
       {hasSteps && (

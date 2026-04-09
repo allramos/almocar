@@ -56,9 +56,9 @@ localStorage.setItem("idade", "26");
 console.log("Idade atualizada:", localStorage.getItem("idade"));
 `;
 
-export const examples: Record<string, { name: string; code: string }> = {
-  vetorSoma:    { name: 'Soma de vetor',             code: vetorSomaExample },
-  matriz:       { name: 'Matriz 3×5: menor e maior', code: matrizExample },
-  leitura:      { name: 'Leitura com prompt',         code: leituraExample },
-  localStorage: { name: 'localStorage simulado',      code: localStorageExample },
+export const examples: Record<string, { name: string; description: string; code: string }> = {
+  vetorSoma:    { name: 'Soma de vetor',             description: 'Soma elementos de um vetor usando laço for',          code: vetorSomaExample },
+  matriz:       { name: 'Matriz 3×5: menor e maior', description: 'Percorre matriz 3×5 buscando menor e maior valor',    code: matrizExample },
+  leitura:      { name: 'Leitura com prompt',         description: 'Lê número via prompt e verifica se é par ou ímpar',   code: leituraExample },
+  localStorage: { name: 'localStorage simulado',      description: 'Armazena, lê, remove e atualiza dados no localStorage', code: localStorageExample },
 };

@@ -204,6 +204,10 @@ export default function App() {
   const [replMode, setReplMode] = useState(false);
   const [replScope, setReplScope] = useState<VarSnapshot[]>([]);
   const [replStorage, setReplStorage] = useState<Record<string, string> | undefined>();
+  const [modeFlash, setModeFlash] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !localStorage.getItem("almocar.onboarded"),
+  );
 
   function changeFontSize(delta: number) {
     setFontSize((prev) => {
@@ -252,9 +256,15 @@ export default function App() {
     });
   }, []);
 
-  // Aplica o tema na raiz do documento.
+  // Aplica o tema na raiz do documento com transição suave.
+  const themeInitRef = useRef(false);
   useEffect(() => {
     const root = document.documentElement;
+    if (themeInitRef.current) {
+      root.classList.add("theme-transition");
+      setTimeout(() => root.classList.remove("theme-transition"), 350);
+    }
+    themeInitRef.current = true;
     root.classList.remove("theme-dark", "theme-light");
     root.classList.add(`theme-${theme}`);
     localStorage.setItem("almocar.theme", theme);
@@ -301,6 +311,8 @@ export default function App() {
 
   function cozinhar() {
     setCollectedInputs([]);
+    setModeFlash(true);
+    setTimeout(() => setModeFlash(false), 650);
     executeWith([]);
   }
 
@@ -423,7 +435,7 @@ export default function App() {
 
   return (
     <div
-      className="h-screen flex flex-col overflow-hidden relative"
+      className="h-screen flex flex-col overflow-hidden relative responsive-shell"
       style={{ zIndex: 0 }}
     >
       <Header
@@ -482,7 +494,30 @@ export default function App() {
         />
       </div>
 
-      <main className="flex-1 flex gap-0 px-6 pb-3 min-h-0">
+      {showOnboarding && mode === "editing" && (
+        <div className="px-6 pb-2">
+          <div className="onboarding-tip flex items-start gap-3">
+            <div className="flex-1 flex flex-col gap-1.5">
+              <div><span className="tip-step">1.</span>Escolha um exemplo ou escreva seu código no painel à esquerda</div>
+              <div><span className="tip-step">2.</span>Clique em <strong style={{color: 'rgb(var(--ember))'}}>Executar</strong> ou pressione <kbd style={{background: 'rgb(var(--bg-soft))', border: '1px solid rgb(var(--bg-crust))', borderRadius: 3, padding: '0 4px', fontSize: 10}}>Ctrl+Enter</kbd></div>
+              <div><span className="tip-step">3.</span>Use os controles de passo para navegar pela execução</div>
+            </div>
+            <button
+              className="tip-dismiss"
+              onClick={() => {
+                setShowOnboarding(false);
+                localStorage.setItem("almocar.onboarded", "1");
+              }}
+            >
+              ✕ Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {modeFlash && <div className="mode-flash" />}
+
+      <main className="flex-1 flex gap-0 px-6 pb-3 min-h-0 responsive-main">
         {/* I — Código / Console */}
         {replMode ? (
           <section style={{ width: `${layout.colLeft * 100}%`, minWidth: 200 }} className="flex flex-col min-h-0">
@@ -623,7 +658,7 @@ export default function App() {
         </section>
       </main>
 
-      <div className="px-6 pb-4">
+      <div className="px-6 pb-4 responsive-controls">
         <Controls
           step={visStepIndex}
           total={visSteps.length}
@@ -682,13 +717,28 @@ function Header({
   onToggleRepl: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [overflowOpen, setOverflowOpen] = useState(false);
+  const overflowRef = useRef<HTMLDivElement>(null);
   const allLanguages = getAllLanguages();
+
+  // Close overflow menu on outside click
+  useEffect(() => {
+    if (!overflowOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (overflowRef.current && !overflowRef.current.contains(e.target as Node)) {
+        setOverflowOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [overflowOpen]);
+
   return (
-    <header className="px-6 pt-5 pb-4 flex items-baseline gap-6 border-b border-bg-crust">
+    <header className="px-6 pt-5 pb-4 flex items-baseline gap-6 border-b border-bg-crust responsive-header">
       <h1 className="wordmark select-none">
         almo<span className="accent">ç</span>ar
       </h1>
-      <span className="smallcaps text-ink-fade hidden lg:inline">
+      <span className="smallcaps text-ink-fade hidden lg:inline header-tagline">
         execução passo a passo · caderno editorial
       </span>
 
@@ -734,46 +784,54 @@ function Header({
           )}
           {Object.entries(language.examples).map(([k, v]) => (
             <option key={k} value={k}>
-              {v.name}
+              {v.name}{v.description ? ` — ${v.description}` : ''}
             </option>
           ))}
         </select>
-        <button
-          onClick={onDownload}
-          className="btn btn-icon"
-          title="Baixar arquivo de código"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        </button>
-        <button
-          onClick={async () => {
-            setCopied(true);
-            await onShare();
-            setTimeout(() => setCopied(false), 2000);
-          }}
-          className="btn"
-          title="Copiar link de compartilhamento"
-        >
-          {copied ? '\u2713 Copiado!' : 'Compartilhar'}
-        </button>
-        <button
-          onClick={onToggleTheme}
-          className="btn btn-icon"
-          title={
-            theme === "dark"
-              ? "Mudar para modo claro"
-              : "Mudar para modo escuro"
-          }
-        >
-          {theme === "dark" ? "☀" : "☾"}
-        </button>
-        <button
-          onClick={onResetLayout}
-          className="btn btn-icon"
-          title="Resetar layout dos painéis"
-        >
-          ⟲
-        </button>
+
+        {/* Overflow menu for secondary actions */}
+        <div className="header-actions-overflow" ref={overflowRef}>
+          <button
+            onClick={() => setOverflowOpen(o => !o)}
+            className="btn btn-icon"
+            title="Mais opções"
+          >
+            ⋯
+          </button>
+          {overflowOpen && (
+            <div className="header-overflow-menu">
+              <button
+                onClick={() => { onDownload(); setOverflowOpen(false); }}
+                className="btn"
+              >
+                ↓ Baixar código
+              </button>
+              <button
+                onClick={async () => {
+                  setCopied(true);
+                  await onShare();
+                  setTimeout(() => setCopied(false), 2000);
+                  setOverflowOpen(false);
+                }}
+                className="btn"
+              >
+                {copied ? '✓ Copiado!' : '⫘ Compartilhar'}
+              </button>
+              <button
+                onClick={() => { onToggleTheme(); setOverflowOpen(false); }}
+                className="btn"
+              >
+                {theme === "dark" ? "☀ Modo claro" : "☾ Modo escuro"}
+              </button>
+              <button
+                onClick={() => { onResetLayout(); setOverflowOpen(false); }}
+                className="btn"
+              >
+                ⟲ Resetar layout
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

@@ -52,8 +52,8 @@ int main() {
 }
 `;
 
-export const examples: Record<string, { name: string; code: string }> = {
-  matriz: { name: 'Matriz 3×5: menor e maior', code: matrizExample },
-  soma: { name: 'Soma de vetor', code: somaExample },
-  ponteiro: { name: 'Ponteiro básico', code: ponteiroExample },
+export const examples: Record<string, { name: string; description: string; code: string }> = {
+  matriz: { name: 'Matriz 3×5: menor e maior', description: 'Percorre matriz 3×5 buscando menor e maior valor', code: matrizExample },
+  soma: { name: 'Soma de vetor', description: 'Soma elementos de um vetor usando laço for', code: somaExample },
+  ponteiro: { name: 'Ponteiro básico', description: 'Altera valor de variável através de ponteiro', code: ponteiroExample },
 };
