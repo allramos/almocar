@@ -2,7 +2,6 @@
   <img src="public/logo.svg" alt="almoçar" width="280" />
 </p>
 
-
 **A**mbiente **L**údico de **M**onitoramento de **O**perações e **C**ódigo
 **A**lgorítmico **R**esponsivo.
 
@@ -14,53 +13,52 @@ avançar/retroceder cada instrução como em um teste de mesa interativo.
 ---
 
 <p align="center">
-  <a href="https://allramos.github.io/almocar/">🔗 Acesse o ALMOÇAR online</a>
+  <a href="https://allramos.github.io/almocar/">Acesse o ALMOÇAR online</a>
 </p>
 
 ## O que está pronto
 
 ### Linguagens suportadas
 
-Arquitetura multi-linguagem com núcleo compartilhado (AST, memória,
-interpretador) e front-ends independentes por linguagem:
+Arquitetura multi-linguagem com núcleo compartilhado e front-ends independentes
+por linguagem.
 
-#### C (subset didático)
+#### C (subconjunto didático)
 
 - **Tipos:** `int`, `float`, `char`, `void`, ponteiros, arrays multidimensionais.
 - **Controle de fluxo:** `if/else`, `for`, `while`, `do/while`, `switch/case`,
   `break`, `continue`, `return`.
 - **Operadores:** aritméticos, relacionais, lógicos, bit-a-bit, atribuição
-  composta (`+=`, `-=`, …), pré/pós incremento/decremento, ternário,
-  `&` (endereço), `*` (deref), indexação `a[i][j]`.
-- **Funções** definidas pelo usuário, chamadas e parâmetros.
-- **Built-ins:** `printf` (`%d %i %u %f %c %s %x`), `scanf` (`%d %f %c %s`),
-  `putchar`, `puts`.
-- **Pré-processador:** `#define` (macros tipo-objeto com expansão recursiva).
-- **Execução interativa:** `scanf` pausa a execução e solicita entrada no
-  terminal integrado, valor por valor, como em um IDE real.
+  composta, pré/pós incremento/decremento, ternário, endereço, ponteiro e
+  indexação.
+- **Funções** com parâmetros e passagem de arrays por referência.
+- **Entrada/saída:** `printf`, `scanf`, `putchar`, `puts`.
+- **Pré-processador:** `#define` com expansão recursiva de macros.
+- **Entrada interativa:** `scanf` pausa a execução e solicita entrada no
+  terminal integrado, valor por valor.
 
-#### Java (subset didático)
+#### Java (subconjunto didático)
 
 - **Tipos:** `int`, `float`, `double`, `char`, `void`, `boolean`, `String`, arrays.
 - **Controle de fluxo:** `if/else`, `for`, `while`, `do/while`, `break`, `continue`, `return`.
-- **Operadores:** mesmos do C, incluindo cast (`(int)`, `(double)`).
-- **Built-ins:** `System.out.println()`, `System.out.print()`,
+- **Operadores:** mesmos do C, incluindo cast.
+- **Entrada/saída:** `System.out.println()`, `System.out.print()`,
   `scanner.nextInt()`, `scanner.nextFloat()`.
-- **Estrutura:** `public class Main { public static void main(String[] args) { ... } }` —
-  pula `import`, `package`, declarações de `Scanner`, modificadores de acesso.
+- **Estrutura:** aceita a classe padrão `public class Main { ... }`, pulando
+  imports e declarações de Scanner.
 
-#### JavaScript (subset didático)
+#### JavaScript (subconjunto didático)
 
 - **Declarações:** `let`, `const`, `var` com inferência automática de tipo.
 - **Controle de fluxo:** `if/else`, `for`, `while`, `do/while`, `break`, `continue`, `return`.
 - **Operadores:** aritméticos, relacionais, lógicos, bit-a-bit, atribuição composta,
   pré/pós incremento/decremento, ternário.
-- **Funções** declaradas com `function`; statements top-level executam como `main`.
-- **Built-ins:** `console.log()`, `prompt()`, `parseInt()`, `parseFloat()`,
-  `Math.floor()`, `Math.ceil()`, `Math.round()`, `Math.abs()`, `Math.max()`,
-  `Math.min()`, `Math.sqrt()`, `Math.pow()`.
-- **Arrays:** literais `[1, 2, 3]` e matrizes `[[1,2],[3,4]]`.
-- **Strings:** aspas duplas, simples e template literals (backtick).
+- **Funções** declaradas com `function`.
+- **Entrada/saída:** `console.log()`, `prompt()`, `parseInt()`, `parseFloat()`,
+  funções de `Math`.
+- **Arrays:** literais e matrizes. **Strings:** aspas duplas, simples e template
+  literals.
+- **REPL:** console interativo com estado persistente entre execuções.
 
 #### Portugol Studio
 
@@ -69,89 +67,78 @@ interpretador) e front-ends independentes por linguagem:
   `escolha/caso/contrario`, `pare`, `continue`, `retorne`.
 - **Operadores:** aritméticos, relacionais, `e`/`ou`/`nao` (lógicos em português),
   `verdadeiro`/`falso`, atribuição composta.
-- **Built-ins:** `escreva()`, `escreval()` (com quebra de linha), `leia()`.
+- **Entrada/saída:** `escreva()`, `escreval()`, `leia()`.
 - **Estrutura:** `programa { funcao inicio() { ... } }` — ponto-e-vírgula opcional.
 
 ### Interface
 
-- **Design editorial** com tipografia Fraunces (serif variável) + JetBrains Mono,
-  temas claro e escuro, sem ligatures de código.
-- **Layout em grid** com seis painéis coordenados:
+- **Design editorial** com tipografia Fraunces + JetBrains Mono e temas
+  claro/escuro com alternância pelo menu.
+- **Layout em painéis** coordenados:
 
 | Nº | Painel | Descrição |
 |----|--------|-----------|
-| I | **Código** | Editor com syntax highlighting, números de linha, destaque da linha ativa e de erros |
-| II | **Estruturas** | Vetores e matrizes desenhados célula a célula com índices e cores (leitura/escrita) |
-| III | **Terminal** | Stdin/stdout unificados — exibe saídas do `printf` e coleta entradas do `scanf` inline |
-| IV | **Variáveis** | Escalares com destaque na variável modificada, formato `nome ··· valor` |
+| I | **Código** | Editor com destaque de sintaxe, números de linha e marcação da linha ativa |
+| II | **Estruturas** | Vetores e matrizes desenhados célula a célula com índices e cores |
+| III | **Terminal** | Saída e entrada unificadas — exibe resultados e coleta entradas inline |
+| IV | **Variáveis** | Escalares com destaque na variável modificada |
 | V | **Trace** | Teste de mesa: lista clicável de todos os passos da execução |
+| VI | **REPL** | Console interativo para JavaScript com estado persistente |
 
 - **Barra de status** com indicador de estado (Pronto / Executando / Concluído / Erro),
   mensagem do passo atual e contador de progresso.
-- **Destaque de erros:** erros de compilação mantêm o editor aberto, destacam a linha
-  com erro (sublinhado ondulado + fundo vinho), e a barra de status fica em amarelo/vinho.
-- **Controle de tamanho da fonte** no editor com botões A−/A+ e persistência
-  via `localStorage`.
+- **Destaque de erros:** erros de compilação destacam a linha com erro e a barra
+  de status sinaliza o problema.
+- **Controle de tamanho da fonte** no editor com botões A−/A+.
+- **Painéis redimensionáveis** com divisores de arrastar entre cada área.
+
+### Responsividade e acessibilidade
+
+- Layout responsivo que empilha os painéis verticalmente em telas pequenas.
+- Redimensionamento por toque em dispositivos móveis.
+- Navegação por teclado, link para pular ao conteúdo principal e atributos ARIA
+  nos controles interativos.
+- Respeita a preferência do sistema por movimento reduzido.
 
 ### Compartilhamento por URL
 
 O botão **Compartilhar** copia um link que contém o código-fonte e a linguagem
-selecionada codificados diretamente na URL.
-
-- **Compressão:** o código é minificado (remoção de indentação e linhas em branco),
-  palavras-chave são substituídas por bytes curtos via dicionário de tokens,
-  e o resultado é comprimido com `deflate-raw` (API nativa `CompressionStream`).
-- **Encurtamento automático:** em produção (domínio público), o link é encurtado via
-  [is.gd](https://is.gd), resultando em URLs de ~25 caracteres. Em `localhost`
-  o link completo é copiado.
-- **Ao abrir um link compartilhado:** o código é descomprimido, decodificado e
-  automaticamente re-formatado pelo formatador da linguagem.
+selecionada embutidos na URL. O código é comprimido para manter o link curto
+e, em produção, é encurtado automaticamente. Ao abrir o link, o código é
+restaurado e formatado.
 
 ### Controles de execução
 
-- Botões: reiniciar, anterior, próximo, play/pause, slider de progresso.
-- 4 velocidades: Lenta (1.6s), Normal (800ms), Rápida (300ms), Turbo (80ms).
+- Botões: reiniciar, anterior, próximo, play/pause e slider de progresso.
+- Quatro velocidades: Lenta, Normal, Rápida e Turbo.
 
 ### Atalhos de teclado
 
 | Atalho | Ação |
 |--------|------|
 | `Ctrl+Enter` | Executar / Parar |
-| `Tab` / `Shift+Tab` | Indentar / des-indentar |
-| `Alt+Shift+F` | Formatar código (re-indentar) |
+| `Tab` / `Shift+Tab` | Indentar / desindentar |
+| `Alt+Shift+F` | Formatar código |
 | `Alt+↑/↓` | Mover linha(s) |
-| `Shift+Alt+↑/↓` | Copiar/duplicar linha(s) |
+| `Shift+Alt+↑/↓` | Duplicar linha(s) |
 | `Ctrl+Shift+K` | Remover linha(s) |
 | `Ctrl+;` | Comentar / descomentar linha(s) |
 | `←` / `→` | Passo anterior / próximo (em execução) |
 
 ### Formatador de código
 
-Formatador minimalista por linguagem que normaliza indentação por chaves,
-preserva strings/comentários e trata `case/default` (C) ou `caso/contrario`
-(Portugol) com recuo adequado.
+Formatador por linguagem que normaliza a indentação, preserva strings e
+comentários, e trata construções como `case/default` e `caso/contrário` com
+recuo adequado.
 
 ### Exemplos pré-carregados
 
-**C:**
-- Matriz 3×5 — encontrar menor e maior valor.
-- Soma de vetor — acumulador com laço `for`.
-- Ponteiro básico — atribuição via ponteiro.
+Cada linguagem inclui exemplos prontos para uso:
 
-**Java:**
-- Soma de vetor — acumulador com `for`.
-- Matriz 3×5 — menor e maior com `for` aninhado.
-- Leitura com Scanner — par ou ímpar.
-
-**JavaScript:**
-- Soma de vetor — acumulador com `for`.
-- Matriz 3×5 — menor e maior com `for` aninhado.
-- Leitura com `prompt` — par ou ímpar.
-
-**Portugol:**
-- Soma de vetor — acumulador com `para`.
-- Matriz 3×5 — menor e maior com `para` aninhado.
-- Leitura com se/senão — par ou ímpar com `leia()`.
+- **C:** matriz 3×5 (menor e maior), soma de vetor, ponteiro básico.
+- **Java:** soma de vetor, matriz 3×5, leitura com Scanner.
+- **JavaScript:** soma de vetor, matriz 3×5, leitura com `prompt`.
+- **Portugol:** soma de vetor, matriz 3×5, leitura com `leia()`.
 
 ---
 
@@ -189,104 +176,70 @@ almocar/
     ├── App.tsx                      # Layout e estado global da UI
     ├── index.css                    # Design tokens e estilos
     ├── interpreter/                 # Núcleo compartilhado
-    │   ├── ast.ts                   # Definição da AST (comum a todas as linguagens)
+    │   ├── ast.ts                   # Definição da AST
     │   ├── index.ts                 # API pública (compileAndRun)
-    │   ├── interpreter.ts           # Tree-walking + gravação de Steps
-    │   ├── memory.ts                # Modelo de memória plano
-    │   └── types.ts                 # Tipos (Step, VarSnapshot, CType)
+    │   ├── interpreter.ts           # Interpretador com gravação de passos
+    │   ├── memory.ts                # Modelo de memória
+    │   └── types.ts                 # Tipos compartilhados
     ├── languages/                   # Front-ends por linguagem
     │   ├── types.ts                 # Interface Language
     │   ├── index.ts                 # Registro de linguagens
-    │   ├── c/                       # Linguagem C
-    │   │   ├── lexer.ts             # Tokenizador com #define
-    │   │   ├── parser.ts            # Parser recursivo descendente
-    │   │   ├── formatter.ts         # Re-indentação por chaves
-    │   │   ├── highlight.ts         # Syntax highlighting
-    │   │   ├── examples.ts          # Exemplos pré-carregados
-    │   │   └── index.ts
-    │   ├── java/                    # Linguagem Java
-    │   │   ├── lexer.ts             # Tokenizador (pula import/package)
-    │   │   ├── parser.ts            # Parser: class → funções
-    │   │   ├── formatter.ts         # Re-indentação por chaves
-    │   │   ├── highlight.ts         # Syntax highlighting
-    │   │   ├── examples.ts          # Exemplos pré-carregados
-    │   │   └── index.ts
-    │   ├── javascript/              # Linguagem JavaScript
-    │   │   ├── lexer.ts             # Tokenizador (console.log, Math.*)
-    │   │   ├── parser.ts            # Parser: let/const/var, top-level → main
-    │   │   ├── formatter.ts         # Re-indentação por chaves
-    │   │   ├── highlight.ts         # Syntax highlighting
-    │   │   ├── examples.ts          # Exemplos pré-carregados
-    │   │   └── index.ts
-    │   └── portugol/                # Linguagem Portugol Studio
-    │       ├── lexer.ts             # Tokenizador com e/ou/nao
-    │       ├── parser.ts            # Parser: programa { funcao inicio() }
-    │       ├── formatter.ts         # Re-indentação por chaves
-    │       ├── highlight.ts         # Syntax highlighting
-    │       ├── examples.ts          # Exemplos pré-carregados
-    │       └── index.ts
+    │   ├── c/
+    │   ├── java/
+    │   ├── javascript/
+    │   └── portugol/
     └── components/
-        ├── ArrayView.tsx            # Vetores e matrizes desenhados
-        ├── CodeView.tsx             # Editor / visualizador de código
-        ├── Controls.tsx             # ▶ ⏸ ⏮ ◀ ▶ + slider + velocidade
-        ├── Mascot.tsx               # Barra de status com 4 estados
-        ├── TerminalPanel.tsx        # Terminal unificado (stdin + stdout)
-        ├── TraceLog.tsx             # Lista clicável de passos
-        └── VariablesPanel.tsx       # Escalares com destaque
+        ├── ArrayView.tsx            # Vetores e matrizes
+        ├── CodeView.tsx             # Editor de código
+        ├── Controls.tsx             # Controles de execução
+        ├── Mascot.tsx               # Barra de status
+        ├── ReplPanel.tsx            # Console REPL interativo
+        ├── TerminalPanel.tsx        # Terminal (entrada e saída)
+        ├── TraceLog.tsx             # Lista de passos
+        └── VariablesPanel.tsx       # Painel de variáveis
 ```
 
 ---
 
 ## Como o interpretador funciona
 
-1. **Lexer** (por linguagem) tokeniza o fonte em palavras-chave, identificadores,
-   números, strings, pontuação e operadores. O lexer C suporta `#define` com
-   expansão recursiva de macros; o Portugol converte `e`/`ou`/`nao` em operadores.
-2. **Parser** (por linguagem) é recursivo descendente e produz uma **AST
-   compartilhada** (definida em `ast.ts`). O parser Portugol renomeia
-   `inicio` → `main` e mapeia tipos (`inteiro` → `int`, `real` → `float`, etc.).
-3. **Memória** (`memory.ts`) é um vetor plano de células lógicas. Cada
-   variável escalar ocupa 1 célula; arrays ocupam `n` células contíguas.
-   Ponteiros guardam endereços (índices nesse vetor).
-4. **Interpretador** (`interpreter.ts`) percorre a AST executando-a, e
-   a cada operação relevante chama `recordStep(...)` que captura:
-   - linha atual no fonte;
-   - descrição em português do que aconteceu;
-   - snapshot completo do escopo (variáveis e arrays);
-   - stdout acumulada;
-   - "foco" (qual variável/célula está sendo lida ou escrita).
-   O interpretador reconhece built-ins de todas as linguagens:
-   `printf`/`scanf`/`putchar`/`puts` (C), `System.out.println`/`System.out.print`/
-   `scanner.nextInt`/`scanner.nextFloat` (Java), `console.log`/`prompt`/
-   `parseInt`/`parseFloat`/`Math.*` (JavaScript) e `escreva`/`escreval`/`leia` (Portugol).
-5. **Entrada interativa:** quando o interpretador encontra `scanf` ou `leia`,
-   lança um `InputNeededSignal`. A UI coleta o valor no terminal integrado e
-   re-executa deterministicamente com todas as entradas acumuladas.
-6. A UI consome a lista de `Step[]` e renderiza o passo selecionado —
-   toda a navegação é instantânea, sem re-executar.
+1. **Lexer** — tokeniza o código-fonte em palavras-chave, identificadores,
+   números, strings e operadores.
+2. **Parser** — constrói uma árvore sintática (AST) compartilhada entre todas
+   as linguagens.
+3. **Memória** — modelo plano onde cada variável ocupa uma ou mais células;
+   ponteiros guardam endereços nesse vetor.
+4. **Interpretador** — percorre a AST e, a cada operação, grava um passo
+   contendo a linha atual, descrição, snapshot das variáveis, saída acumulada e
+   foco (qual variável está sendo lida ou escrita).
+5. **Entrada interativa** — quando o interpretador encontra uma leitura
+   (`scanf`, `leia`, `prompt`, etc.), a execução pausa e o terminal integrado
+   solicita o valor ao usuário.
+6. A interface consome a lista de passos gravados e renderiza o passo
+   selecionado — toda a navegação é instantânea.
 
-Limite de segurança: a execução para após **5000 passos** para evitar
+Limite de segurança: a execução para após **5.000 passos** para evitar
 travar a interface em caso de laço infinito.
 
 ### Adicionando novas linguagens
 
-Para adicionar uma linguagem, crie um diretório em `src/languages/<nome>/`
-implementando a interface `Language` (definida em `src/languages/types.ts`):
+Crie um diretório em `src/languages/<nome>/` implementando a interface
+`Language`:
 
-- `parse(source)` → AST compartilhada
-- `format(source)` → código re-indentado
-- `highlight` → configuração de syntax highlighting
-- `examples` → exemplos pré-carregados
+- `parse(source)` — código-fonte para AST
+- `format(source)` — código reformatado
+- `highlight` — configuração de destaque de sintaxe
+- `examples` — exemplos pré-carregados
 
 Registre a linguagem em `src/languages/index.ts` e ela aparecerá
-automaticamente no seletor da interface.
+automaticamente no seletor.
 
 ---
 
 ## Próximos passos sugeridos
 
 - Suporte a `struct`, `typedef`, `malloc`/`free` (C).
-- Novas linguagens: Python (subset), Pascal.
+- Novas linguagens: Python, Pascal.
 - Modo professor com biblioteca de exercícios.
 
 ---
