@@ -42,7 +42,7 @@ export function ArrayView({ vars, zoom = 1, onZoomChange, storage }: Props) {
           </span>
         )}
       </div>
-      <div className="px-4 pb-4 pt-4 overflow-auto flex-1 space-y-5" style={{ zoom }}>
+      <div className="px-4 pb-4 pt-4 overflow-auto flex-1 flex flex-wrap gap-5 justify-center content-start" style={{ zoom }}>
         {arrays.length === 0 && storageEntries.length === 0 && (
           <div className="empty-state">
             <div className="empty-state-icon">[ ]</div>
@@ -67,13 +67,13 @@ function ArrayBlock({ variable }: { variable: VarSnapshot }) {
   const cells = variable.cells!;
 
   return (
-    <div className="board">
+    <div className="board" style={{ flex: 'none' }}>
       <div className="flex items-baseline gap-3 mb-3">
         <span className="font-mono text-ink text-[13px] font-medium">
           {variable.name}
         </span>
         <span className="font-mono text-ink-mute text-[11px]">{variable.type}</span>
-        <span className="flex-1 border-b border-bg-crust translate-y-[-3px]" />
+        <span className="border-b border-bg-crust translate-y-[-3px] min-w-[20px] flex-1" />
         <span className="font-mono text-ink-fade text-[10px]">{dims.join(' × ')}</span>
       </div>
       {dims.length === 1 && <Array1D cells={cells} />}
