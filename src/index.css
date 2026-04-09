@@ -237,7 +237,7 @@ code, pre, .code-overlay, .code-input,
 .drag-divider {
   flex-shrink: 0;
   position: relative;
-  z-index: 10;
+  z-index: 10; /* z-scale: dividers */
   background: transparent;
   transition: background 0.15s;
 }
@@ -410,7 +410,7 @@ code, pre, .code-overlay, .code-input,
 }
 .tile.hl {
   transform: scale(1.06);
-  z-index: 5;
+  z-index: 10; /* z-scale: tile highlights */
 }
 
 /* === Status strip indicator ======================================= */
@@ -768,6 +768,45 @@ select.menu-select:focus-visible {
   font-size: 11px;
 }
 
+/* === Skip link (a11y) ============================================== */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  z-index: 100;
+  padding: 8px 16px;
+  background: rgb(var(--ember));
+  color: rgb(var(--bg));
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-radius: 0 0 6px 6px;
+  text-decoration: none;
+  transition: top 150ms;
+}
+.skip-link:focus {
+  top: 0;
+  outline: none;
+}
+
+/* === Reduced motion ================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* === Z-index scale ================================================= */
+/* z-10: drag dividers, tile highlights
+   z-20: mode flash overlay
+   z-30: onboarding, dropdown menus
+   z-50: overflow menu, modals
+   z-100: skip link */
+
 /* === Transição suave de tema ======================================= */
 html.theme-transition,
 html.theme-transition *,
@@ -836,6 +875,42 @@ html.theme-transition *::after {
   max-width: 200px;
 }
 
+/* === Touch targets (a11y) ========================================== */
+@media (max-width: 768px) {
+  .btn, .menu-select {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Panel-title: allow toolbar to wrap on small screens */
+  .panel-title {
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    padding: 8px 12px;
+  }
+  /* Shrink panel actions to fit mobile */
+  .panel-action {
+    font-size: 9px;
+    padding: 6px 8px;
+    min-height: 32px;
+    letter-spacing: 0.08em;
+  }
+  .panel-action-primary,
+  .panel-action-stop {
+    min-height: 36px;
+  }
+  /* Font size controls: tighter on mobile */
+  .panel-title .meta {
+    display: none;
+  }
+}
+
+/* === Cursor on interactive elements ================================ */
+.tile { cursor: default; }
+.tile.read, .tile.write, .tile.hl { cursor: pointer; }
+
 /* === Status bar enhanced =========================================== */
 .status-bar-message {
   font-family: 'Fraunces', Georgia, serif;
@@ -844,6 +919,7 @@ html.theme-transition *::after {
   font-size: 15px;
   line-height: 1.4;
   letter-spacing: -0.01em;
+  max-width: 65ch;
 }
 
 /* === Mode transition flash ========================================= */
@@ -856,7 +932,7 @@ html.theme-transition *::after {
   inset: 0;
   background: rgb(var(--ember) / 0.06);
   pointer-events: none;
-  z-index: 20;
+  z-index: 20; /* z-scale: overlays */
   animation: modeFlash 600ms ease-out forwards;
 }
 
@@ -901,7 +977,7 @@ html.theme-transition *::after {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  z-index: 50;
+  z-index: 50; /* z-scale: menus/modals */
   background: rgb(var(--bg-panel));
   border: 1px solid rgb(var(--bg-crust));
   border-radius: 6px;
@@ -961,6 +1037,18 @@ html.theme-transition *::after {
 }
 
 @media (max-width: 768px) {
+  /* Drag dividers: enlarge touch target on mobile */
+  .drag-divider-row {
+    height: 28px;
+  }
+  .drag-divider-row::after {
+    width: 48px;
+    height: 4px;
+  }
+  .drag-divider-row::before {
+    width: 28px;
+    height: 4px;
+  }
   .responsive-header {
     flex-wrap: wrap !important;
     gap: 8px !important;

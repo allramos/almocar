@@ -134,32 +134,61 @@ function DragDivider({
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
-  const onMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      const startPos = direction === "col" ? e.clientX : e.clientY;
+  const startDrag = useCallback(
+    (startPos: number) => {
       const parent = ref.current?.parentElement;
       if (!parent) return;
       const total =
         direction === "col" ? parent.offsetWidth : parent.offsetHeight;
 
-      const onMove = (ev: MouseEvent) => {
+      const onMouseMove = (ev: MouseEvent) => {
         const cur = direction === "col" ? ev.clientX : ev.clientY;
         onDrag(cur - startPos, total);
       };
-      const onUp = () => {
-        window.removeEventListener("mousemove", onMove);
-        window.removeEventListener("mouseup", onUp);
+      const onMouseUp = () => {
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onMouseUp);
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
       };
       document.body.style.cursor =
         direction === "col" ? "col-resize" : "row-resize";
       document.body.style.userSelect = "none";
-      window.addEventListener("mousemove", onMove);
-      window.addEventListener("mouseup", onUp);
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+
+      // Touch events
+      const onTouchMove = (ev: TouchEvent) => {
+        ev.preventDefault();
+        const touch = ev.touches[0];
+        const cur = direction === "col" ? touch.clientX : touch.clientY;
+        onDrag(cur - startPos, total);
+      };
+      const onTouchEnd = () => {
+        window.removeEventListener("touchmove", onTouchMove);
+        window.removeEventListener("touchend", onTouchEnd);
+        document.body.style.userSelect = "";
+      };
+      window.addEventListener("touchmove", onTouchMove, { passive: false });
+      window.addEventListener("touchend", onTouchEnd);
     },
     [direction, onDrag],
+  );
+
+  const onMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      startDrag(direction === "col" ? e.clientX : e.clientY);
+    },
+    [direction, startDrag],
+  );
+
+  const onTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      const touch = e.touches[0];
+      startDrag(direction === "col" ? touch.clientX : touch.clientY);
+    },
+    [direction, startDrag],
   );
 
   return (
@@ -167,6 +196,7 @@ function DragDivider({
       ref={ref}
       className={`drag-divider drag-divider-${direction}`}
       onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
     />
   );
 }
@@ -438,6 +468,9 @@ export default function App() {
       className="h-screen flex flex-col overflow-hidden relative responsive-shell"
       style={{ zIndex: 0 }}
     >
+      <a href="#main-content" className="skip-link">
+        Pular para o conteúdo
+      </a>
       <Header
         exampleKey={exampleKey}
         onExample={loadExample}
@@ -517,7 +550,7 @@ export default function App() {
 
       {modeFlash && <div className="mode-flash" />}
 
-      <main className="flex-1 flex gap-0 px-6 pb-3 min-h-0 responsive-main">
+      <main id="main-content" className="flex-1 flex gap-0 px-6 pb-3 min-h-0 responsive-main">
         {/* I — Código / Console */}
         {replMode ? (
           <section style={{ width: `${layout.colLeft * 100}%`, minWidth: 200 }} className="flex flex-col min-h-0">
@@ -795,16 +828,20 @@ function Header({
             onClick={() => setOverflowOpen(o => !o)}
             className="btn btn-icon"
             title="Mais opções"
+            aria-label="Mais opções"
+            aria-expanded={overflowOpen}
           >
-            ⋯
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
           </button>
           {overflowOpen && (
-            <div className="header-overflow-menu">
+            <div className="header-overflow-menu" role="menu">
               <button
                 onClick={() => { onDownload(); setOverflowOpen(false); }}
                 className="btn"
+                role="menuitem"
               >
-                ↓ Baixar código
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:'inline',verticalAlign:'middle',marginRight:6}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Baixar código
               </button>
               <button
                 onClick={async () => {
@@ -814,20 +851,29 @@ function Header({
                   setOverflowOpen(false);
                 }}
                 className="btn"
+                role="menuitem"
               >
-                {copied ? '✓ Copiado!' : '⫘ Compartilhar'}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:'inline',verticalAlign:'middle',marginRight:6}}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                {copied ? 'Copiado!' : 'Compartilhar'}
               </button>
               <button
                 onClick={() => { onToggleTheme(); setOverflowOpen(false); }}
                 className="btn"
+                role="menuitem"
               >
-                {theme === "dark" ? "☀ Modo claro" : "☾ Modo escuro"}
+                {theme === "dark" ? (
+                  <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:'inline',verticalAlign:'middle',marginRight:6}}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Modo claro</>
+                ) : (
+                  <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:'inline',verticalAlign:'middle',marginRight:6}}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> Modo escuro</>
+                )}
               </button>
               <button
                 onClick={() => { onResetLayout(); setOverflowOpen(false); }}
                 className="btn"
+                role="menuitem"
               >
-                ⟲ Resetar layout
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:'inline',verticalAlign:'middle',marginRight:6}}><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                Resetar layout
               </button>
             </div>
           )}
@@ -864,7 +910,7 @@ function AboutDialog({ onClose }: { onClose: () => void }) {
             className="btn btn-icon"
             aria-label="Fechar"
           >
-            ✕
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
 

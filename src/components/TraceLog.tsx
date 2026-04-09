@@ -44,7 +44,7 @@ export function TraceLog({ steps, current, onSelect, fontSize = 12.5 }: Props) {
               key={i}
               data-i={i}
               onClick={() => onSelect(i)}
-              className={`group w-full text-left px-2 py-1 flex items-baseline gap-2 rounded transition-colors
+              className={`group w-full text-left px-2 py-1 flex items-baseline gap-2 rounded transition-colors cursor-pointer
                 ${active ? 'bg-ember/10' : 'hover:bg-bg-soft'}`}
             >
               <span
