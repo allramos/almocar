@@ -51,13 +51,13 @@
   --bg-panel:  255 253 248;  /* #fffdf8 */
   --bg-soft:   240 237 230;
   --bg-crust:  220 215 204;
-  --bg-inset:  234 230 220;
+  --bg-inset:  244 241 234;
   --bg-code:   255 253 248;   /* mesmo que bg-panel no claro */
 
   --ink:        38 36 32;    /* #262420 */
   --ink-dim:    96 92 84;
   --ink-mute:  140 134 122;
-  --ink-fade:  186 180 168;
+  --ink-fade:  140 134 120;
 
   --ember:     181 92 38;
   --saffron:   164 122 30;

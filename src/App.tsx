@@ -181,7 +181,7 @@ export default function App() {
   const [speed, setSpeed] = useState(800);
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem("almocar.theme") as Theme) ?? "dark",
+    () => (localStorage.getItem("almocar.theme") as Theme) ?? "light",
   );
   const [languageId, setLanguageId] = useState<string>("c");
   const lang: Language = useMemo(() => getLanguage(languageId), [languageId]);

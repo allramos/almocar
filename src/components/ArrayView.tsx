@@ -106,9 +106,9 @@ function Array2D({ cells, rows, cols }: { cells: any[]; rows: number; cols: numb
   }
   return (
     <div className="inline-block">
-      <div className="flex gap-1.5 mb-1.5 ml-7">
+      <div className="flex gap-1.5 mb-1.5" style={{ marginLeft: 'calc(1.25rem + 6px)' }}>
         {Array.from({ length: cols }).map((_, k) => (
-          <div key={k} className="min-w-[46px] text-center italic-num text-ink-fade text-[10px]">{k}</div>
+          <div key={k} className="min-w-[42px] text-center italic-num text-ink-fade text-[10px]">{k}</div>
         ))}
       </div>
       {grid.map((row, r) => (
