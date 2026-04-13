@@ -201,11 +201,12 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
     if (e.key === 'Enter') {
       const before = value.slice(0, start);
       const after = value.slice(end);
-      const charBefore = before.trimEnd().slice(-1);
+      // Só ativa se o '{' está na mesma linha do cursor (não em linhas anteriores)
+      const lineStart = before.lastIndexOf('\n') + 1;
+      const currentLine = before.slice(lineStart);
+      const charBefore = currentLine.trimEnd().slice(-1);
       if (charBefore === '{') {
         e.preventDefault();
-        const lineStart = before.lastIndexOf('\n') + 1;
-        const currentLine = before.slice(lineStart);
         const indent = currentLine.match(/^\s*/)?.[0] ?? '';
         const inner = indent + '    ';
         // Se já existe '}' logo após o cursor (auto-close), consome-o
@@ -219,8 +220,6 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
       }
       // Enter genérico: preserva indentação da linha atual
       e.preventDefault();
-      const lineStart = before.lastIndexOf('\n') + 1;
-      const currentLine = before.slice(lineStart);
       const indent = currentLine.match(/^\s*/)?.[0] ?? '';
       const trimmed = currentLine.trimStart();
       // Linhas que terminam com ')' e começam com for/while/if/else if,
