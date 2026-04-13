@@ -25,13 +25,17 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
     if (gutter) gutter.style.transform = `translateY(${-ta.scrollTop}px)`;
   }
 
-  // Atalhos do editor:
-  // Tab / Shift+Tab → indentar / des-indentar
-  // Ctrl+Shift+F → formatar código
-  // Ctrl+Shift+K → remover linha(s)
-  // Ctrl+; → comentar/descomentar linha(s)
-  // Alt+↑/↓ → mover linha(s)
-  // Shift+Alt+↑/↓ → copiar linha(s)
+  // Insere texto no textarea de forma que o Ctrl+Z funcione.
+  // Seleciona o trecho [from, to) e substitui por `text` via execCommand.
+  function undoableReplace(ta: HTMLTextAreaElement, from: number, to: number, text: string) {
+    ta.focus();
+    ta.selectionStart = from;
+    ta.selectionEnd = to;
+    document.execCommand('insertText', false, text);
+    // Dispara onChange para React sincronizar o estado
+    onChange?.(ta.value);
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     const ta = e.currentTarget;
     const value = ta.value;
@@ -52,15 +56,7 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
       let lineEnd = value.indexOf('\n', end);
       if (lineEnd < 0) lineEnd = value.length;
       else lineEnd += 1; // inclui o \n
-      // Se apagou até o fim e sobrou \n antes, remove-o.
-      const newText = lineStart === 0 && lineEnd >= value.length
-        ? ''
-        : value.slice(0, lineStart) + value.slice(lineEnd);
-      onChange?.(newText);
-      requestAnimationFrame(() => {
-        const pos = Math.min(lineStart, newText.length);
-        ta.selectionStart = ta.selectionEnd = pos;
-      });
+      undoableReplace(ta, lineStart, lineEnd, '');
       return;
     }
 
@@ -106,8 +102,7 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
           return result;
         }).join('\n');
       }
-      const newText = value.slice(0, lineStart) + newBlock + value.slice(lineEnd);
-      onChange?.(newText);
+      undoableReplace(ta, lineStart, lineEnd, newBlock);
       requestAnimationFrame(() => {
         ta.selectionStart = Math.max(lineStart, start + firstDelta);
         ta.selectionEnd = Math.max(lineStart, end + totalDelta);
@@ -130,18 +125,14 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
 
       if (copy) {
         // Copiar: duplica o bloco na direção indicada.
-        const newText = up
-          ? value.slice(0, lineStart) + block + '\n' + value.slice(lineStart)
-          : value.slice(0, lineEnd) + '\n' + block + value.slice(lineEnd);
-        onChange?.(newText);
         if (up) {
-          // Cursor permanece nas linhas originais (que agora estão abaixo).
+          undoableReplace(ta, lineStart, lineStart, block + '\n');
           requestAnimationFrame(() => {
             ta.selectionStart = start;
             ta.selectionEnd = end;
           });
         } else {
-          // Cursor vai para as linhas copiadas abaixo.
+          undoableReplace(ta, lineEnd, lineEnd, '\n' + block);
           const offset = lineEnd - lineStart + 1;
           requestAnimationFrame(() => {
             ta.selectionStart = start + offset;
@@ -151,23 +142,21 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
       } else {
         // Mover: troca o bloco com a linha adjacente.
         if (up) {
-          if (lineStart === 0) return; // já é a primeira linha
+          if (lineStart === 0) return;
           const prevLineStart = value.lastIndexOf('\n', lineStart - 2) + 1;
           const prevLine = value.slice(prevLineStart, lineStart - 1);
-          const newText = value.slice(0, prevLineStart) + block + '\n' + prevLine + value.slice(lineEnd);
-          onChange?.(newText);
+          undoableReplace(ta, prevLineStart, lineEnd, block + '\n' + prevLine);
           const shift = lineStart - prevLineStart;
           requestAnimationFrame(() => {
             ta.selectionStart = start - shift;
             ta.selectionEnd = end - shift;
           });
         } else {
-          if (lineEnd >= value.length) return; // já é a última linha
+          if (lineEnd >= value.length) return;
           const nextLineEnd = value.indexOf('\n', lineEnd + 1);
           const nextEnd = nextLineEnd < 0 ? value.length : nextLineEnd;
           const nextLine = value.slice(lineEnd + 1, nextEnd);
-          const newText = value.slice(0, lineStart) + nextLine + '\n' + block + value.slice(nextEnd);
-          onChange?.(newText);
+          undoableReplace(ta, lineStart, nextEnd, nextLine + '\n' + block);
           const shift = nextEnd - lineEnd;
           requestAnimationFrame(() => {
             ta.selectionStart = start + shift;
@@ -183,8 +172,7 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
     const closing = pairs[e.key];
     if (closing && start === end) {
       e.preventDefault();
-      const newText = value.slice(0, start) + e.key + closing + value.slice(end);
-      onChange?.(newText);
+      undoableReplace(ta, start, end, e.key + closing);
       requestAnimationFrame(() => {
         ta.selectionStart = ta.selectionEnd = start + 1;
       });
@@ -204,11 +192,7 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
       const charAfter = value[start];
       if (pairs[charBefore] && pairs[charBefore] === charAfter) {
         e.preventDefault();
-        const newText = value.slice(0, start - 1) + value.slice(start + 1);
-        onChange?.(newText);
-        requestAnimationFrame(() => {
-          ta.selectionStart = ta.selectionEnd = start - 1;
-        });
+        undoableReplace(ta, start - 1, start + 1, '');
         return;
       }
     }
@@ -225,10 +209,9 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
         const indent = currentLine.match(/^\s*/)?.[0] ?? '';
         const inner = indent + '    ';
         // Se já existe '}' logo após o cursor (auto-close), consome-o
-        const rest = after[0] === '}' ? after.slice(1) : after;
-        const newText = before + '\n' + inner + '\n' + indent + '}' + rest;
-        onChange?.(newText);
-        const cursorPos = before.length + 1 + inner.length;
+        const consumeClose = after[0] === '}' ? 1 : 0;
+        undoableReplace(ta, start, end + consumeClose, '\n' + inner + '\n' + indent + '}');
+        const cursorPos = start + 1 + inner.length;
         requestAnimationFrame(() => {
           ta.selectionStart = ta.selectionEnd = cursorPos;
         });
@@ -239,9 +222,8 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
       const lineStart = before.lastIndexOf('\n') + 1;
       const currentLine = before.slice(lineStart);
       const indent = currentLine.match(/^\s*/)?.[0] ?? '';
-      const newText = before + '\n' + indent + after;
-      onChange?.(newText);
-      const cursorPos = before.length + 1 + indent.length;
+      undoableReplace(ta, start, end, '\n' + indent);
+      const cursorPos = start + 1 + indent.length;
       requestAnimationFrame(() => {
         ta.selectionStart = ta.selectionEnd = cursorPos;
       });
@@ -255,11 +237,7 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
 
     // Sem seleção: insere INDENT na posição do cursor.
     if (start === end && !e.shiftKey) {
-      const next = value.slice(0, start) + INDENT + value.slice(end);
-      onChange?.(next);
-      requestAnimationFrame(() => {
-        ta.selectionStart = ta.selectionEnd = start + INDENT.length;
-      });
+      undoableReplace(ta, start, end, INDENT);
       return;
     }
 
@@ -293,8 +271,7 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
         return INDENT + l;
       }).join('\n');
     }
-    const next = value.slice(0, lineStart) + newBlock + value.slice(lineEnd);
-    onChange?.(next);
+    undoableReplace(ta, lineStart, lineEnd, newBlock);
     requestAnimationFrame(() => {
       ta.selectionStart = start + firstLineDelta;
       ta.selectionEnd = end + delta;
