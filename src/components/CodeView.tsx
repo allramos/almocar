@@ -68,8 +68,10 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
       if (lineEnd < 0) lineEnd = value.length;
       const block = value.slice(lineStart, lineEnd);
       const lines = block.split('\n');
-      // Se todas as linhas (não-vazias) começam com "//", descomenta; senão, comenta.
-      const allCommented = lines.every(l => l.trimStart() === '' || l.trimStart().startsWith('//'));
+      // Se todas as linhas não-vazias começam com "//", descomenta; senão, comenta.
+      // Se todas são vazias, comenta (insere "// ").
+      const hasContent = lines.some(l => l.trimStart().length > 0);
+      const allCommented = hasContent && lines.every(l => l.trimStart() === '' || l.trimStart().startsWith('//'));
       let newBlock: string;
       let firstDelta = 0;
       let totalDelta = 0;
@@ -95,7 +97,6 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
         }
         if (!Number.isFinite(minIndent)) minIndent = 0;
         newBlock = lines.map((l, i) => {
-          if (l.trim().length === 0) return l;
           const result = l.slice(0, minIndent) + '// ' + l.slice(minIndent);
           if (i === 0) firstDelta = 3;
           totalDelta += 3;
