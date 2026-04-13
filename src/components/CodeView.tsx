@@ -220,7 +220,6 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
       const charBefore = before.trimEnd().slice(-1);
       if (charBefore === '{') {
         e.preventDefault();
-        // Calcula indentação da linha atual.
         const lineStart = before.lastIndexOf('\n') + 1;
         const currentLine = before.slice(lineStart);
         const indent = currentLine.match(/^\s*/)?.[0] ?? '';
@@ -235,6 +234,18 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
         });
         return;
       }
+      // Enter genérico: preserva indentação da linha atual
+      e.preventDefault();
+      const lineStart = before.lastIndexOf('\n') + 1;
+      const currentLine = before.slice(lineStart);
+      const indent = currentLine.match(/^\s*/)?.[0] ?? '';
+      const newText = before + '\n' + indent + after;
+      onChange?.(newText);
+      const cursorPos = before.length + 1 + indent.length;
+      requestAnimationFrame(() => {
+        ta.selectionStart = ta.selectionEnd = cursorPos;
+      });
+      return;
     }
 
     // Tab / Shift+Tab → indentação
