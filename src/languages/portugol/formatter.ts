@@ -7,6 +7,7 @@ export function formatPortugol(source: string): string {
 
   let depth = 0;
   let inBlockComment = false;
+  let bracelessIndent = false;
   const out: string[] = [];
 
   for (let i = 0; i < raw.length; i++) {
@@ -26,8 +27,10 @@ export function formatPortugol(source: string): string {
 
     const { open, close, closesFirst, opensBlockComment } = scanLine(trimmed);
 
-    const effectiveDepth = Math.max(0, depth - closesFirst);
+    const effectiveDepth = Math.max(0, depth - closesFirst) + (bracelessIndent ? 1 : 0);
     const indent = INDENT.repeat(effectiveDepth);
+
+    if (bracelessIndent) bracelessIndent = false;
 
     if (/^(caso\s.+|contrario)\s*:/.test(trimmed)) {
       const labelDepth = Math.max(0, depth - 1);
@@ -39,6 +42,13 @@ export function formatPortugol(source: string): string {
     depth += open - close;
     if (depth < 0) depth = 0;
     if (opensBlockComment) inBlockComment = true;
+
+    if (open === 0 && close === 0) {
+      if (/^(para|enquanto|se|senao\s+se)\s*\(.*\)\s*$/.test(trimmed)
+          || /^(senao|entao)\s*$/.test(trimmed)) {
+        bracelessIndent = true;
+      }
+    }
   }
 
   while (out.length > 1 && out[out.length - 1] === '') out.pop();

@@ -10,6 +10,7 @@ export function formatC(source: string): string {
 
   let depth = 0;
   let inBlockComment = false;
+  let bracelessIndent = false; // próxima linha recebe +1 indent (for/while/if sem chaves)
   const out: string[] = [];
 
   for (let i = 0; i < raw.length; i++) {
@@ -39,8 +40,11 @@ export function formatC(source: string): string {
     const { open, close, closesFirst, opensBlockComment } = scanLine(trimmed);
 
     // Se a linha começa fechando bloco(s), reduz indentação antes de imprimir.
-    const effectiveDepth = Math.max(0, depth - closesFirst);
+    const effectiveDepth = Math.max(0, depth - closesFirst) + (bracelessIndent ? 1 : 0);
     const indent = INDENT.repeat(effectiveDepth);
+
+    // Consome o indent temporário (vale só para 1 linha)
+    if (bracelessIndent) bracelessIndent = false;
 
     // Caso especial: rótulos de case/default e labels com `:` no fim,
     // costumam ficar um nível à esquerda do bloco.
@@ -54,6 +58,14 @@ export function formatC(source: string): string {
     depth += open - close;
     if (depth < 0) depth = 0;
     if (opensBlockComment) inBlockComment = true;
+
+    // Detecta for/while/if/else sem chaves → próxima linha indenta
+    if (open === 0 && close === 0) {
+      if (/^(for|while|if|else\s+if)\s*\(.*\)\s*$/.test(trimmed)
+          || /^else\s*$/.test(trimmed)) {
+        bracelessIndent = true;
+      }
+    }
   }
 
   // Garante exatamente uma quebra final.

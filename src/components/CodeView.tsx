@@ -222,8 +222,14 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
       const lineStart = before.lastIndexOf('\n') + 1;
       const currentLine = before.slice(lineStart);
       const indent = currentLine.match(/^\s*/)?.[0] ?? '';
-      undoableReplace(ta, start, end, '\n' + indent);
-      const cursorPos = start + 1 + indent.length;
+      const trimmed = currentLine.trimStart();
+      // Linhas que terminam com ')' e começam com for/while/if/else if,
+      // ou linhas 'else' / 'senao' / 'entao' → adicionar nível extra
+      const braceless = /^(for|while|if|else\s+if|para|enquanto|se)\s*\(.*\)\s*$/.test(trimmed)
+        || /^(else|senao|entao)\s*$/.test(trimmed);
+      const newIndent = braceless ? indent + '    ' : indent;
+      undoableReplace(ta, start, end, '\n' + newIndent);
+      const cursorPos = start + 1 + newIndent.length;
       requestAnimationFrame(() => {
         ta.selectionStart = ta.selectionEnd = cursorPos;
       });
