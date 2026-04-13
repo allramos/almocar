@@ -354,7 +354,7 @@ export default function App() {
     executeWith([]);
   }
 
-  function executeWith(inputs: string[], jumpToEnd = false) {
+  function executeWith(inputs: string[], jumpToEnd = false, resumeFrom?: number) {
     const result = compileAndRun(sourceRef.current, langRef.current, {
       inputs: inputs.join(" "),
       requestMoreInput: () => null,
@@ -377,7 +377,11 @@ export default function App() {
     } else {
       setWaitingForInput(false);
       setInputConv("");
-      setStepIndex(jumpToEnd ? Math.max(0, result.steps.length - 1) : 0);
+      // Se veio de um input, retoma do ponto onde parou; senão vai ao início ou fim
+      const idx = resumeFrom != null
+        ? Math.min(resumeFrom, result.steps.length - 1)
+        : (jumpToEnd ? Math.max(0, result.steps.length - 1) : 0);
+      setStepIndex(idx);
       setError(null);
     }
   }
@@ -385,7 +389,9 @@ export default function App() {
   function handleInputSubmit(value: string) {
     const newInputs = [...collectedInputs, value];
     setCollectedInputs(newInputs);
-    executeWith(newInputs, true);
+    // Guarda a posição atual (último passo antes do input) para retomar dali
+    const resumeFrom = steps.length - 1;
+    executeWith(newInputs, false, resumeFrom);
   }
 
   function voltarEditar() {

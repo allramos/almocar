@@ -638,7 +638,12 @@ class Interpreter {
       if (argi >= args.length) {
         throw new RuntimeError(`scanf: faltam argumentos para o formato`, line);
       }
-      const destAddr = this.evalExpr(args[argi++], scope);
+      const destArg = args[argi++];
+      const destAddr = this.evalExpr(destArg, scope);
+      // Rastreia foco de escrita no destino (variável ou célula de array)
+      const destTarget = destArg.kind === 'AddrOf' ? destArg.operand : destArg;
+      const writeFocus = this.focusFor(destTarget, scope, 'write');
+      if (writeFocus) this.pushFocus(writeFocus);
       const promptMsg = `Entrada para scanf("${fmt.replace(/\n/g, '\\n')}") — valor #${read + 1} (%${conv})`;
       if (conv === 's') {
         const tok = this.nextInputToken(promptMsg, line, conv);
