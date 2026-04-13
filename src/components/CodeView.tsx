@@ -225,7 +225,9 @@ export function CodeView({ source, activeLine, errorLine, editable, onChange, on
         const currentLine = before.slice(lineStart);
         const indent = currentLine.match(/^\s*/)?.[0] ?? '';
         const inner = indent + '    ';
-        const newText = before + '\n' + inner + '\n' + indent + '}' + after;
+        // Se já existe '}' logo após o cursor (auto-close), consome-o
+        const rest = after[0] === '}' ? after.slice(1) : after;
+        const newText = before + '\n' + inner + '\n' + indent + '}' + rest;
         onChange?.(newText);
         const cursorPos = before.length + 1 + inner.length;
         requestAnimationFrame(() => {
