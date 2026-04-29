@@ -280,6 +280,19 @@ class Interpreter {
 
   execInitializer(init: Initializer, type: CType, addr: number, scope: Scope) {
     if (init.kind === 'Single') {
+      // char s[N] = "literal" → copia os bytes diretamente no array.
+      if (type.kind === 'array' && init.expr.kind === 'StringLit') {
+        let inner: CType = type;
+        while (inner.kind === 'array') inner = inner.of;
+        if (inner.kind === 'char') {
+          const str = init.expr.value;
+          const capacity = logicalSize(type);
+          const len = Math.min(str.length, capacity - 1);
+          for (let i = 0; i < len; i++) this.memory.write(addr + i, str.charCodeAt(i));
+          this.memory.write(addr + len, 0);
+          return;
+        }
+      }
       const v = this.evalExpr(init.expr, scope);
       this.memory.write(addr, v);
       return;

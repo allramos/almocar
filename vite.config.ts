@@ -5,4 +5,7 @@ export default defineConfig({
   plugins: [react()],
   base: '/almocar/',
   server: { port: 5173, open: true },
+  test: {
+    environment: 'node',
+  },
 });
