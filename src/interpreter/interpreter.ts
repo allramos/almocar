@@ -693,7 +693,8 @@ class Interpreter {
   // Para strings literais (StringLit), a memória é inicializada com os bytes,
   // então a leitura funciona tanto para literais quanto para buffers char[].
   readCString(addr: number, limit: number = 4096): string {
-    if (!addr) return '';
+    // Endereço 0 é válido aqui (memória simulada começa em 0); só rejeita negativos.
+    if (addr < 0) return '';
     let s = '';
     for (let i = 0; i < limit; i++) {
       const b = this.memory.read(addr + i);
