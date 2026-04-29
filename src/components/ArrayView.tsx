@@ -65,9 +65,10 @@ export function ArrayView({ vars, zoom = 1, onZoomChange, storage }: Props) {
 function ArrayBlock({ variable }: { variable: VarSnapshot }) {
   const dims = variable.shape!;
   const cells = variable.cells!;
+  const compact = variable.elemKind === 'char';
 
   return (
-    <div className="board" style={{ flex: 'none' }}>
+    <div className="board" style={{ flex: 'none', maxWidth: '100%' }}>
       <div className="flex items-baseline gap-3 mb-3">
         <span className="font-mono text-ink text-[13px] font-medium">
           {variable.name}
@@ -76,49 +77,51 @@ function ArrayBlock({ variable }: { variable: VarSnapshot }) {
         <span className="border-b border-bg-crust translate-y-[-3px] min-w-[20px] flex-1" />
         <span className="font-mono text-ink-fade text-[10px]">{dims.join(' × ')}</span>
       </div>
-      {dims.length === 1 && <Array1D cells={cells} />}
-      {dims.length === 2 && <Array2D cells={cells} rows={dims[0]} cols={dims[1]} />}
-      {dims.length > 2 && <Array1D cells={cells} />}
+      {dims.length === 1 && <Array1D cells={cells} compact={compact} />}
+      {dims.length === 2 && <Array2D cells={cells} rows={dims[0]} cols={dims[1]} compact={compact} />}
+      {dims.length > 2 && <Array1D cells={cells} compact={compact} />}
     </div>
   );
 }
 
-function Tile({ value, hl, written, read }: { value: string; hl?: boolean; written?: boolean; read?: boolean }) {
+function Tile({ value, hl, written, read, compact }: { value: string; hl?: boolean; written?: boolean; read?: boolean; compact?: boolean }) {
   const cls = `tile ${written ? 'write' : ''} ${read ? 'read' : ''} ${hl ? 'hl' : ''}`.trim();
-  return <div className={cls}>{value}</div>;
+  const style = compact ? { minWidth: 24, padding: '0 2px' } : undefined;
+  return <div className={cls} style={style}>{value}</div>;
 }
 
-function Array1D({ cells }: { cells: any[] }) {
+function Array1D({ cells, compact }: { cells: any[]; compact?: boolean }) {
   return (
     <div className="flex gap-1.5 flex-wrap">
       {cells.map((c, i) => (
         <div key={i} className="flex flex-col items-center">
           <span className="italic-num text-ink-fade text-[10px] mb-1">{i}</span>
-          <Tile value={c.value} hl={c.highlighted} written={c.written} read={c.read} />
+          <Tile value={c.value} hl={c.highlighted} written={c.written} read={c.read} compact={compact} />
         </div>
       ))}
     </div>
   );
 }
 
-function Array2D({ cells, rows, cols }: { cells: any[]; rows: number; cols: number }) {
+function Array2D({ cells, rows, cols, compact }: { cells: any[]; rows: number; cols: number; compact?: boolean }) {
   const grid: any[][] = Array.from({ length: rows }, () => []);
   for (const c of cells) {
     const [r, k] = c.index;
     grid[r][k] = c;
   }
+  const headerMin = compact ? 24 : 42;
   return (
     <div className="inline-block">
       <div className="flex gap-1.5 mb-1.5" style={{ marginLeft: 'calc(1.25rem + 6px)' }}>
         {Array.from({ length: cols }).map((_, k) => (
-          <div key={k} className="min-w-[42px] text-center italic-num text-ink-fade text-[10px]">{k}</div>
+          <div key={k} className="text-center italic-num text-ink-fade text-[10px]" style={{ minWidth: headerMin }}>{k}</div>
         ))}
       </div>
       {grid.map((row, r) => (
         <div key={r} className="flex items-center gap-1.5 mb-1.5">
           <div className="w-5 text-right italic-num text-ink-fade text-[10px] pr-1">{r}</div>
           {row.map((c, k) => (
-            <Tile key={k} value={c?.value ?? '·'} hl={c?.highlighted} written={c?.written} read={c?.read} />
+            <Tile key={k} value={c?.value ?? '·'} hl={c?.highlighted} written={c?.written} read={c?.read} compact={compact} />
           ))}
         </div>
       ))}

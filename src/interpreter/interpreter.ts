@@ -491,9 +491,94 @@ class Interpreter {
     }
     if (name === 'puts') {
       const addr = this.evalExpr(args[0], scope);
-      const s = this.stringTable.get(addr) ?? '';
+      const s = this.readCString(addr);
       this.output += s + '\n';
       return s.length + 1;
+    }
+    // ===== Built-ins de <string.h> e <stdio.h> (entrada de strings) =====
+    if (name === 'fgets') {
+      // fgets(buffer, n, stream) — terceiro argumento (stdin) é ignorado.
+      const destAddr = this.evalExpr(args[0], scope);
+      const maxN = args.length > 1 ? this.evalExpr(args[1], scope) : 256;
+      const promptMsg = `Entrada para fgets — informe uma linha`;
+      const lineRead = this.nextInputLine(promptMsg, line);
+      const limit = Math.max(0, maxN - 1);
+      const truncated = lineRead.length > limit ? lineRead.slice(0, limit) : lineRead;
+      // fgets preserva o '\n' final quando há espaço no buffer.
+      const stored = lineRead.length <= limit ? truncated + '\n' : truncated;
+      this.writeCString(destAddr, stored);
+      this.output += stored;
+      return destAddr;
+    }
+    if (name === 'gets') {
+      const destAddr = this.evalExpr(args[0], scope);
+      const promptMsg = `Entrada para gets — informe uma linha`;
+      const lineRead = this.nextInputLine(promptMsg, line);
+      this.writeCString(destAddr, lineRead);
+      this.output += lineRead + '\n';
+      return destAddr;
+    }
+    if (name === 'strlen') {
+      const addr = this.evalExpr(args[0], scope);
+      return this.readCString(addr).length;
+    }
+    if (name === 'strcmp') {
+      const a = this.readCString(this.evalExpr(args[0], scope));
+      const b = this.readCString(this.evalExpr(args[1], scope));
+      return a < b ? -1 : a > b ? 1 : 0;
+    }
+    if (name === 'strncmp') {
+      const a = this.readCString(this.evalExpr(args[0], scope));
+      const b = this.readCString(this.evalExpr(args[1], scope));
+      const n = this.evalExpr(args[2], scope);
+      const sa = a.slice(0, n), sb = b.slice(0, n);
+      return sa < sb ? -1 : sa > sb ? 1 : 0;
+    }
+    if (name === 'strcpy') {
+      const dst = this.evalExpr(args[0], scope);
+      const src = this.readCString(this.evalExpr(args[1], scope));
+      this.writeCString(dst, src);
+      return dst;
+    }
+    if (name === 'strncpy') {
+      const dst = this.evalExpr(args[0], scope);
+      const src = this.readCString(this.evalExpr(args[1], scope));
+      const n = this.evalExpr(args[2], scope);
+      for (let k = 0; k < n; k++) {
+        this.memory.write(dst + k, k < src.length ? src.charCodeAt(k) : 0);
+      }
+      return dst;
+    }
+    if (name === 'strcat') {
+      const dst = this.evalExpr(args[0], scope);
+      const src = this.readCString(this.evalExpr(args[1], scope));
+      const cur = this.readCString(dst);
+      this.writeCString(dst, cur + src);
+      return dst;
+    }
+    if (name === 'strchr') {
+      const baseAddr = this.evalExpr(args[0], scope);
+      const ch = this.evalExpr(args[1], scope) & 0xff;
+      const s = this.readCString(baseAddr);
+      const idx = s.indexOf(String.fromCharCode(ch));
+      return idx < 0 ? 0 : baseAddr + idx;
+    }
+    if (name === 'strstr') {
+      const baseAddr = this.evalExpr(args[0], scope);
+      const s = this.readCString(baseAddr);
+      const sub = this.readCString(this.evalExpr(args[1], scope));
+      const idx = s.indexOf(sub);
+      return idx < 0 ? 0 : baseAddr + idx;
+    }
+    if (name === 'atoi') {
+      const s = this.readCString(this.evalExpr(args[0], scope));
+      const n = parseInt(s.trim(), 10);
+      return Number.isNaN(n) ? 0 : n;
+    }
+    if (name === 'atof') {
+      const s = this.readCString(this.evalExpr(args[0], scope));
+      const n = parseFloat(s.trim());
+      return Number.isNaN(n) ? 0 : n;
     }
     // ===== Built-ins Portugol =====
     if (name === 'escreva' || name === 'escreval') return this.execEscreva(args, scope, line, name === 'escreval');
@@ -593,7 +678,7 @@ class Interpreter {
         case 'u': out += String(v >>> 0); break;
         case 'f': out += Number(v).toFixed(parseSpecPrecision(spec, 6)); break;
         case 'c': out += String.fromCharCode(v); break;
-        case 's': out += this.stringTable.get(v) ?? ''; break;
+        case 's': out += this.readCString(v); break;
         case 'x': out += (v >>> 0).toString(16); break;
         case 'X': out += (v >>> 0).toString(16).toUpperCase(); break;
         case '%': out += '%'; break;
@@ -602,6 +687,41 @@ class Interpreter {
     }
     this.output += out;
     return out.length;
+  }
+
+  // Lê uma string da memória até encontrar '\0' (ou um limite de segurança).
+  // Para strings literais (StringLit), a memória é inicializada com os bytes,
+  // então a leitura funciona tanto para literais quanto para buffers char[].
+  readCString(addr: number, limit: number = 4096): string {
+    if (!addr) return '';
+    let s = '';
+    for (let i = 0; i < limit; i++) {
+      const b = this.memory.read(addr + i);
+      if (!b) break;
+      s += String.fromCharCode(b);
+    }
+    if (s.length === 0) {
+      const cached = this.stringTable.get(addr);
+      if (cached !== undefined) return cached;
+    }
+    return s;
+  }
+
+  // Escreve uma string na memória terminada em '\0'.
+  writeCString(addr: number, str: string) {
+    for (let i = 0; i < str.length; i++) this.memory.write(addr + i, str.charCodeAt(i));
+    this.memory.write(addr + str.length, 0);
+  }
+
+  // Lê uma linha completa de entrada (para fgets/gets). Quando a fila de
+  // tokens está vazia, solicita uma linha ao usuário; caso contrário,
+  // consome o próximo token como se fosse uma linha (limitação aceitável
+  // para uso didático com `inputs` pré-alimentado).
+  nextInputLine(promptMsg: string, line: number): string {
+    if (this.inputQueue.length > 0) return this.inputQueue.shift()!;
+    const raw = this.requestMoreInput(promptMsg);
+    if (raw === null) throw new InputNeededSignal(promptMsg, 's', line);
+    return raw;
   }
 
   // Lê o próximo token da fila de entrada. Se a fila estiver vazia, solicita
@@ -935,19 +1055,25 @@ class Interpreter {
     if (type.kind === 'array') {
       const dims = arrayDims(type);
       const total = dims.reduce((a, b) => a * b, 1);
+      // Tipo do elemento mais interno (para arrays multi-dimensionais).
+      let innerType: CType = type;
+      while (innerType.kind === 'array') innerType = innerType.of;
+      const isCharArray = innerType.kind === 'char';
       const cells: CellSnapshot[] = [];
       for (let i = 0; i < total; i++) {
         const idx = unflatten(i, dims);
+        const raw = this.memory.read(addr + i);
         cells.push({
           index: idx,
           flatIndex: i,
           address: addr + i,
-          value: String(this.memory.read(addr + i)),
+          value: isCharArray ? formatCharCell(raw) : String(raw),
         });
       }
       return {
         name, type: typeName(type), address: addr,
         value: `array ${dims.join('×')}`, cells, shape: dims, scalar: false,
+        elemKind: innerType.kind,
       };
     }
     if (type.kind === 'pointer') {
@@ -1055,6 +1181,18 @@ class Interpreter {
     }
     return undefined;
   }
+}
+
+// Formata uma célula de char[]: '\0' como ponto, imprimíveis como o glifo,
+// e demais bytes como o código numérico (mantém a leitura quando há lixo).
+function formatCharCell(byte: number): string {
+  if (byte === 0) return '·';
+  if (byte === 10) return '\\n';
+  if (byte === 13) return '\\r';
+  if (byte === 9) return '\\t';
+  if (byte === 32) return '␣';
+  if (byte >= 32 && byte < 127) return String.fromCharCode(byte);
+  return String(byte);
 }
 
 // ===== utilidades =====

@@ -61,6 +61,7 @@ export interface VarSnapshot {
   // Se for array, decompõe em células visuais.
   cells?: CellSnapshot[];
   shape?: number[]; // dimensões (para arrays multi-dimensionais)
+  elemKind?: string; // tipo do elemento mais interno (ex.: 'char') — para visualização
   scalar?: boolean;
   // Estados de foco no passo atual (apenas escalares).
   read?: boolean;
