@@ -75,4 +75,5 @@ export interface FunctionDecl extends NodeBase {
 export interface Program {
   kind: 'Program';
   functions: FunctionDecl[];
+  includes: Set<string>; // headers declarados com #include, ex: 'stdio.h'
 }

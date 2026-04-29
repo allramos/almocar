@@ -73,7 +73,7 @@ class Parser {
       functions.push(this.parseFunction());
     }
     if (hasClass) this.match('PUNCT', '}');
-    return { kind: 'Program', functions };
+    return { kind: 'Program', functions, includes: new Set<string>() };
   }
 
   parseBaseType(): CType {

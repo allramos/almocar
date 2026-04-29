@@ -24,8 +24,14 @@ const PUNCT_2 = [
 ];
 const PUNCT_1 = '+-*/%=<>!&|^~?:.,;()[]{}#';
 
-export function tokenize(source: string): Token[] {
+export interface TokenizeResult {
+  tokens: Token[];
+  includes: Set<string>; // ex.: 'stdio.h', 'string.h'
+}
+
+export function tokenize(source: string): TokenizeResult {
   const tokens: Token[] = [];
+  const includes = new Set<string>();
   // Macros tipo-objeto (#define NAME corpo). Chave: nome; valor: tokens de
   // substituição (já expandidos contra macros previamente definidos).
   const macros = new Map<string, Token[]>();
@@ -76,7 +82,7 @@ export function tokenize(source: string): Token[] {
         while (i < n && at() !== '\n') { body += at(); advance(); }
         if (macroName.length > 0) {
           // Tokeniza o corpo recursivamente e expande macros já conhecidos.
-          const raw = tokenize(body).filter((t) => t.kind !== 'EOF');
+          const raw = tokenize(body).tokens.filter((t) => t.kind !== 'EOF');
           const expanded: Token[] = [];
           for (const t of raw) {
             if (t.kind === 'IDENT' && macros.has(t.value)) {
@@ -87,6 +93,15 @@ export function tokenize(source: string): Token[] {
           }
           macros.set(macroName, expanded);
         }
+      } else if (directive === 'include') {
+        while (i < n && (at() === ' ' || at() === '\t')) advance();
+        // aceita <header.h> ou "header.h"
+        const open = at(); advance();
+        const close = open === '<' ? '>' : '"';
+        let header = '';
+        while (i < n && at() !== close && at() !== '\n') { header += at(); advance(); }
+        if (at() === close) advance();
+        if (header.length > 0) includes.add(header);
       } else {
         // Outras diretivas: descarta o restante da linha.
         while (i < n && at() !== '\n') advance();
@@ -205,7 +220,7 @@ export function tokenize(source: string): Token[] {
   }
 
   tokens.push({ kind: 'EOF', value: '', line, col });
-  return tokens;
+  return { tokens, includes };
 }
 
 function isIdentStart(c: string) { return /[a-zA-Z_]/.test(c); }

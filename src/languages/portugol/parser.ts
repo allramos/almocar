@@ -56,7 +56,7 @@ class Parser {
     for (const fn of functions) {
       if (fn.name === 'inicio') fn.name = 'main';
     }
-    return { kind: 'Program', functions };
+    return { kind: 'Program', functions, includes: new Set<string>() };
   }
 
   // tipo simples

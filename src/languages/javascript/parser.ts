@@ -69,7 +69,7 @@ class Parser {
       line: 1,
     });
 
-    return { kind: 'Program', functions };
+    return { kind: 'Program', functions, includes: new Set<string>() };
   }
 
   parseFunction(): FunctionDecl {

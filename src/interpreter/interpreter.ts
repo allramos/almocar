@@ -483,8 +483,34 @@ class Interpreter {
   // ===== Funções (built-ins) =====
   stringTable = new Map<number, string>();
 
+  // Mapa de função → header necessário.
+  static readonly HEADER_REQUIRED: Record<string, string> = {
+    printf: 'stdio.h', scanf: 'stdio.h', putchar: 'stdio.h',
+    puts: 'stdio.h', gets: 'stdio.h', fgets: 'stdio.h',
+    strlen: 'string.h', strcmp: 'string.h', strncmp: 'string.h',
+    strcpy: 'string.h', strncpy: 'string.h', strcat: 'string.h',
+    strchr: 'string.h', strstr: 'string.h',
+    atoi: 'stdlib.h', atof: 'stdlib.h',
+    toupper: 'ctype.h', tolower: 'ctype.h',
+    isalpha: 'ctype.h', isdigit: 'ctype.h', isalnum: 'ctype.h',
+    isspace: 'ctype.h', isupper: 'ctype.h', islower: 'ctype.h',
+    ispunct: 'ctype.h', isprint: 'ctype.h', iscntrl: 'ctype.h',
+    isxdigit: 'ctype.h',
+  };
+
+  requireHeader(name: string, line: number) {
+    const header = Interpreter.HEADER_REQUIRED[name];
+    if (header && !this.program.includes.has(header)) {
+      throw new RuntimeError(
+        `Função '${name}' requer '#include <${header}>'`,
+        line,
+      );
+    }
+  }
+
   evalCall(name: string, args: Expr[], scope: Scope, line: number): number {
     // ===== Built-ins C =====
+    this.requireHeader(name, line);
     if (name === 'printf') return this.execPrintf(args, scope, line);
     if (name === 'scanf') return this.execScanf(args, scope, line);
     if (name === 'putchar') {

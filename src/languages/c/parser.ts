@@ -7,13 +7,13 @@ import {
 import { CType, tInt, tFloat, tChar, tVoid, tPtr } from '../../interpreter/types';
 
 export function parse(source: string): Program {
-  const tokens = tokenize(source);
-  return new Parser(tokens).parseProgram();
+  const { tokens, includes } = tokenize(source);
+  return new Parser(tokens, includes).parseProgram();
 }
 
 class Parser {
   pos = 0;
-  constructor(public tokens: Token[]) {}
+  constructor(public tokens: Token[], public includes: Set<string>) {}
 
   // ----- helpers -----
   peek(k = 0): Token { return this.tokens[this.pos + k]; }
@@ -47,7 +47,7 @@ class Parser {
     while (!this.eof()) {
       functions.push(this.parseFunction());
     }
-    return { kind: 'Program', functions };
+    return { kind: 'Program', functions, includes: this.includes };
   }
 
   // tipo simples (int, float, char, void) com possíveis '*'
