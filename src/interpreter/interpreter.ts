@@ -583,6 +583,56 @@ class Interpreter {
       const n = parseFloat(s.trim());
       return Number.isNaN(n) ? 0 : n;
     }
+    // ===== Built-ins de <ctype.h> =====
+    if (name === 'toupper') {
+      const c = this.evalExpr(args[0], scope) & 0xff;
+      return c >= 97 && c <= 122 ? c - 32 : c;
+    }
+    if (name === 'tolower') {
+      const c = this.evalExpr(args[0], scope) & 0xff;
+      return c >= 65 && c <= 90 ? c + 32 : c;
+    }
+    if (name === 'isalpha') {
+      const c = this.evalExpr(args[0], scope) & 0xff;
+      return (c >= 65 && c <= 90) || (c >= 97 && c <= 122) ? 1 : 0;
+    }
+    if (name === 'isdigit') {
+      const c = this.evalExpr(args[0], scope) & 0xff;
+      return c >= 48 && c <= 57 ? 1 : 0;
+    }
+    if (name === 'isalnum') {
+      const c = this.evalExpr(args[0], scope) & 0xff;
+      return (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c >= 48 && c <= 57) ? 1 : 0;
+    }
+    if (name === 'isspace') {
+      const c = this.evalExpr(args[0], scope) & 0xff;
+      return c === 32 || (c >= 9 && c <= 13) ? 1 : 0;
+    }
+    if (name === 'isupper') {
+      const c = this.evalExpr(args[0], scope) & 0xff;
+      return c >= 65 && c <= 90 ? 1 : 0;
+    }
+    if (name === 'islower') {
+      const c = this.evalExpr(args[0], scope) & 0xff;
+      return c >= 97 && c <= 122 ? 1 : 0;
+    }
+    if (name === 'ispunct') {
+      const c = this.evalExpr(args[0], scope) & 0xff;
+      return (c >= 33 && c <= 47) || (c >= 58 && c <= 64) ||
+             (c >= 91 && c <= 96) || (c >= 123 && c <= 126) ? 1 : 0;
+    }
+    if (name === 'isprint') {
+      const c = this.evalExpr(args[0], scope) & 0xff;
+      return c >= 32 && c <= 126 ? 1 : 0;
+    }
+    if (name === 'iscntrl') {
+      const c = this.evalExpr(args[0], scope) & 0xff;
+      return c < 32 || c === 127 ? 1 : 0;
+    }
+    if (name === 'isxdigit') {
+      const c = this.evalExpr(args[0], scope) & 0xff;
+      return (c >= 48 && c <= 57) || (c >= 65 && c <= 70) || (c >= 97 && c <= 102) ? 1 : 0;
+    }
     // ===== Built-ins Portugol =====
     if (name === 'escreva' || name === 'escreval') return this.execEscreva(args, scope, line, name === 'escreval');
     if (name === 'leia') return this.execLeia(args, scope, line);
