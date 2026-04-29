@@ -86,8 +86,11 @@ class Interpreter {
   lastLiveScope: Scope | undefined;
   // Escopo do chamador (para que a função enxergue as variáveis do chamador).
   callerScope: Scope | undefined;
-  // Fila de tokens de entrada para scanf. Pré-alimentada por options.inputs.
-  inputQueue: string[] = [];
+  // Buffer bruto de entrada (compartilhado por scanf e fgets). Os reads são
+  // posicionais: scanf consome tokens (separados por espaços), fgets consome
+  // até a próxima quebra de linha (preservando espaços internos).
+  rawInput = '';
+  rawPos = 0;
   requestMoreInput: (message: string) => string | null;
   // localStorage simulado (JavaScript)
   simulatedStorage = new Map<string, string>();
@@ -95,7 +98,7 @@ class Interpreter {
   constructor(public program: Program, options: RunOptions = {}) {
     for (const f of program.functions) this.functions.set(f.name, f);
     if (options.inputs) {
-      this.inputQueue = options.inputs.split(/\s+/).filter((s) => s.length > 0);
+      this.rawInput = options.inputs;
     }
     if (options.initialStorage) {
       for (const [k, v] of Object.entries(options.initialStorage)) {
@@ -714,30 +717,42 @@ class Interpreter {
     this.memory.write(addr + str.length, 0);
   }
 
-  // Lê uma linha completa de entrada (para fgets/gets). Quando a fila de
-  // tokens está vazia, solicita uma linha ao usuário; caso contrário,
-  // consome o próximo token como se fosse uma linha (limitação aceitável
-  // para uso didático com `inputs` pré-alimentado).
-  nextInputLine(promptMsg: string, line: number): string {
-    if (this.inputQueue.length > 0) return this.inputQueue.shift()!;
-    const raw = this.requestMoreInput(promptMsg);
-    if (raw === null) throw new InputNeededSignal(promptMsg, 's', line);
-    return raw;
+  // Garante que rawInput tenha conteúdo a partir da posição atual; caso
+  // contrário, solicita mais conteúdo ao usuário. Lança InputNeededSignal se
+  // não há mecanismo interativo disponível.
+  ensureInput(promptMsg: string, line: number, conv: string): void {
+    while (this.rawPos >= this.rawInput.length) {
+      const raw = this.requestMoreInput(promptMsg);
+      if (raw === null) throw new InputNeededSignal(promptMsg, conv, line);
+      // Garante separador entre o que já tinha e o novo.
+      if (this.rawInput.length > 0 && !this.rawInput.endsWith('\n')) this.rawInput += '\n';
+      this.rawInput += raw;
+      if (!this.rawInput.endsWith('\n')) this.rawInput += '\n';
+    }
   }
 
-  // Lê o próximo token da fila de entrada. Se a fila estiver vazia, solicita
-  // mais valores ao usuário (window.prompt por padrão) e re-tokeniza.
+  // Lê uma linha completa de entrada (para fgets/gets). Preserva espaços
+  // internos. Consome o '\n' final mas não o inclui no retorno.
+  nextInputLine(promptMsg: string, line: number): string {
+    this.ensureInput(promptMsg, line, 's');
+    const start = this.rawPos;
+    while (this.rawPos < this.rawInput.length && this.rawInput[this.rawPos] !== '\n') this.rawPos++;
+    const end = this.rawPos;
+    if (this.rawPos < this.rawInput.length) this.rawPos++; // consome '\n'
+    return this.rawInput.slice(start, end);
+  }
+
+  // Lê o próximo token (separado por espaços) do buffer de entrada.
   nextInputToken(promptMsg: string, line: number, conv: string = '?'): string {
-    while (this.inputQueue.length === 0) {
-      const raw = this.requestMoreInput(promptMsg);
-      if (raw === null) {
-        throw new InputNeededSignal(promptMsg, conv, line);
-      }
-      const tokens = raw.split(/\s+/).filter((s) => s.length > 0);
-      if (tokens.length === 0) continue;
-      this.inputQueue.push(...tokens);
+    // Pula espaços em branco iniciais; pode precisar de mais conteúdo.
+    while (true) {
+      while (this.rawPos < this.rawInput.length && /\s/.test(this.rawInput[this.rawPos])) this.rawPos++;
+      if (this.rawPos < this.rawInput.length) break;
+      this.ensureInput(promptMsg, line, conv);
     }
-    return this.inputQueue.shift()!;
+    const start = this.rawPos;
+    while (this.rawPos < this.rawInput.length && !/\s/.test(this.rawInput[this.rawPos])) this.rawPos++;
+    return this.rawInput.slice(start, this.rawPos);
   }
 
   execScanf(args: Expr[], scope: Scope, line: number): number {

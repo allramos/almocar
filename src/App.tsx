@@ -356,7 +356,7 @@ export default function App() {
 
   function executeWith(inputs: string[], jumpToEnd = false, resumeFrom?: number) {
     const result = compileAndRun(sourceRef.current, langRef.current, {
-      inputs: inputs.join(" "),
+      inputs: inputs.join("\n"),
       requestMoreInput: () => null,
     });
 
