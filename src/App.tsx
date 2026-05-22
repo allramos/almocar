@@ -354,7 +354,12 @@ export default function App() {
     executeWith([]);
   }
 
-  function executeWith(inputs: string[], jumpToEnd = false, resumeFrom?: number) {
+  function executeWith(
+    inputs: string[],
+    jumpToEnd = false,
+    resumeFrom?: number,
+    autoPlay = true,
+  ) {
     const result = compileAndRun(sourceRef.current, langRef.current, {
       inputs: inputs.join("\n"),
       requestMoreInput: () => null,
@@ -363,6 +368,7 @@ export default function App() {
     // Se houve erro de compilação, permanece em modo edição.
     if (!result.ok && !result.needsInput) {
       setError(result.error ?? "Erro desconhecido");
+      setPlaying(false);
       return;
     }
 
@@ -374,6 +380,7 @@ export default function App() {
       setInputConv(result.inputConv ?? "");
       setStepIndex(result.steps.length - 1);
       setError(null);
+      setPlaying(false);
     } else {
       setWaitingForInput(false);
       setInputConv("");
@@ -383,6 +390,9 @@ export default function App() {
         : (jumpToEnd ? Math.max(0, result.steps.length - 1) : 0);
       setStepIndex(idx);
       setError(null);
+      if (autoPlay && result.steps.length > 0 && idx < result.steps.length - 1) {
+        setPlaying(true);
+      }
     }
   }
 
@@ -391,7 +401,7 @@ export default function App() {
     setCollectedInputs(newInputs);
     // Guarda a posição atual (último passo antes do input) para retomar dali
     const resumeFrom = steps.length - 1;
-    executeWith(newInputs, false, resumeFrom);
+    executeWith(newInputs, false, resumeFrom, true);
   }
 
   function voltarEditar() {
