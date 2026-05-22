@@ -61,15 +61,45 @@ async function compressToURL(langId: string, source: string): Promise<string> {
 }
 
 async function shortenIfPossible(longURL: string): Promise<string> {
-  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return longURL;
-  try {
-    const res = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(longURL)}`);
-    if (!res.ok) return longURL;
-    const data = await res.json();
-    return data.shorturl ?? longURL;
-  } catch {
+  // URLs locais normalmente não podem ser encurtadas por serviços públicos.
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
     return longURL;
   }
+
+  const providers: Array<() => Promise<string | null>> = [
+    // is.gd
+    async () => {
+      const res = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(longURL)}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return typeof data?.shorturl === 'string' ? data.shorturl : null;
+    },
+    // v.gd (mesma API do is.gd)
+    async () => {
+      const res = await fetch(`https://v.gd/create.php?format=json&url=${encodeURIComponent(longURL)}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return typeof data?.shorturl === 'string' ? data.shorturl : null;
+    },
+    // TinyURL endpoint simples em texto
+    async () => {
+      const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longURL)}`);
+      if (!res.ok) return null;
+      const short = (await res.text()).trim();
+      return /^https?:\/\//i.test(short) ? short : null;
+    },
+  ];
+
+  for (const provider of providers) {
+    try {
+      const short = await provider();
+      if (short) return short;
+    } catch {
+      // Tenta o próximo provedor.
+    }
+  }
+
+  return longURL;
 }
 
 async function decompressFromURL(): Promise<{ langId: string; source: string } | null> {
