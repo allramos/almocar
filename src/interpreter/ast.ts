@@ -44,6 +44,9 @@ export interface VarDecl extends NodeBase {
   kind: 'VarDecl';
   type: CType;
   name: string;
+  // Dimensões de array declaradas no código-fonte (permite VLA em C).
+  // Ex.: int m[n][k] -> [Ident(n), Ident(k)].
+  arrayDims?: Expr[];
   init?: Initializer;
 }
 

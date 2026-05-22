@@ -479,3 +479,102 @@ describe('erro de #include ausente', () => {
     expect(error).toMatch(/stdio\.h/);
   });
 });
+
+describe('C arrays com dimensão dinâmica (VLA)', () => {
+  it('suporta array 1D com tamanho vindo de scanf', () => {
+    const { output, ok, error } = runC(`
+      #include <stdio.h>
+      int main() {
+        int n;
+        scanf("%d", &n);
+        int v[n];
+        v[0] = 7;
+        v[n - 1] = 9;
+        printf("%d %d\\n", v[0], v[n - 1]);
+        return 0;
+      }
+    `, '4');
+    expect(ok).toBe(true);
+    expect(error).toBeUndefined();
+    const lastLine = output.trim().split('\n').pop() ?? '';
+    expect(lastLine).toBe('7 9');
+  });
+
+  it('suporta matriz 2D com dimensões variáveis', () => {
+    const { output, ok, error } = runC(`
+      #include <stdio.h>
+      int main() {
+        int n;
+        int m;
+        scanf("%d", &n);
+        scanf("%d", &m);
+        int mat[n][m];
+        mat[0][0] = 11;
+        mat[n - 1][m - 1] = 22;
+        printf("%d %d\\n", mat[0][0], mat[n - 1][m - 1]);
+        return 0;
+      }
+    `, '2 3');
+    expect(ok).toBe(true);
+    expect(error).toBeUndefined();
+    const lastLine = output.trim().split('\n').pop() ?? '';
+    expect(lastLine).toBe('11 22');
+  });
+
+  it('suporta parâmetro VLA 1D em função', () => {
+    const { output, ok, error } = runC(`
+      #include <stdio.h>
+
+      int soma(int n, int v[n]) {
+        int i;
+        int s = 0;
+        for (i = 0; i < n; i = i + 1) {
+          s = s + v[i];
+        }
+        return s;
+      }
+
+      int main() {
+        int n;
+        scanf("%d", &n);
+        int v[n];
+        int i;
+        for (i = 0; i < n; i = i + 1) {
+          v[i] = i + 1;
+        }
+        printf("%d\\n", soma(n, v));
+        return 0;
+      }
+    `, '4');
+    expect(ok).toBe(true);
+    expect(error).toBeUndefined();
+    const lastLine = output.trim().split('\n').pop() ?? '';
+    expect(lastLine).toBe('10');
+  });
+
+  it('suporta parâmetro VLA 2D em função', () => {
+    const { output, ok, error } = runC(`
+      #include <stdio.h>
+
+      int canto(int n, int m, int mat[n][m]) {
+        return mat[n - 1][m - 1];
+      }
+
+      int main() {
+        int n;
+        int m;
+        scanf("%d", &n);
+        scanf("%d", &m);
+        int mat[n][m];
+        mat[0][0] = 5;
+        mat[n - 1][m - 1] = 99;
+        printf("%d\\n", canto(n, m, mat));
+        return 0;
+      }
+    `, '2 3');
+    expect(ok).toBe(true);
+    expect(error).toBeUndefined();
+    const lastLine = output.trim().split('\n').pop() ?? '';
+    expect(lastLine).toBe('99');
+  });
+});

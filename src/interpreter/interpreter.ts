@@ -261,17 +261,36 @@ class Interpreter {
 
   // ===== Declarações =====
   execDecl(decl: VarDecl, scope: Scope) {
-    const size = logicalSize(decl.type);
+    let resolvedType = decl.type;
+    if (decl.arrayDims && decl.arrayDims.length > 0) {
+      const dims = decl.arrayDims.map((dimExpr) => {
+        const raw = this.evalExpr(dimExpr, scope);
+        const dim = Math.trunc(raw);
+        if (!Number.isFinite(raw) || dim <= 0) {
+          throw new RuntimeError(
+            `Tamanho de array deve ser inteiro positivo (recebido ${raw})`,
+            dimExpr.line,
+          );
+        }
+        return dim;
+      });
+      // Constrói array do mais interno para o mais externo.
+      for (let i = dims.length - 1; i >= 0; i--) {
+        resolvedType = { kind: 'array', of: resolvedType, size: dims[i] };
+      }
+    }
+
+    const size = logicalSize(resolvedType);
     const addr = this.memory.allocLogical(size);
-    scope.define(decl.name, { type: decl.type, address: addr });
+    scope.define(decl.name, { type: resolvedType, address: addr });
     if (decl.init) {
-      this.execInitializer(decl.init, decl.type, addr, scope);
+      this.execInitializer(decl.init, resolvedType, addr, scope);
     }
     this.recordStep(
       decl.line,
       decl.init
-        ? `Declarada variável ${typeName(decl.type)} ${decl.name} já inicializada`
-        : `Declarada variável ${typeName(decl.type)} ${decl.name}`,
+        ? `Declarada variável ${typeName(resolvedType)} ${decl.name} já inicializada`
+        : `Declarada variável ${typeName(resolvedType)} ${decl.name}`,
       scope,
       'running', undefined,
       { varName: decl.name, kind: 'write' }

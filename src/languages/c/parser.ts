@@ -103,10 +103,14 @@ class Parser {
   parseParam(): Param {
     const type = this.parseBaseType();
     const name = this.expect('IDENT').value;
-    // arrays como parâmetros: tratar como ponteiro (suporta múltiplas dimensões)
+    // Arrays como parâmetros: em C o parâmetro decai para ponteiro.
+    // Aqui aceitamos dimensões literais/expressões (incluindo VLA) e [] vazio.
     let pType = type;
     while (this.match('PUNCT', '[')) {
-      while (!this.match('PUNCT', ']')) this.next();
+      if (!this.is('PUNCT', ']')) {
+        this.parseExpr();
+      }
+      this.expect('PUNCT', ']');
       pType = tPtr(pType);
     }
     return { name, type: pType };
@@ -162,27 +166,25 @@ class Parser {
     while (this.match('PUNCT', '*')) type = tPtr(type);
     const nameTok = this.expect('IDENT');
     // arrays: pode ser multi-dimensional
-    const dims: number[] = [];
+    const dimsExpr: Expr[] = [];
     while (this.match('PUNCT', '[')) {
-      const sizeTok = this.peek();
-      if (sizeTok.kind !== 'INT') {
-        throw new SyntaxError(`Tamanho de array deve ser literal inteiro (linha ${sizeTok.line})`);
+      if (this.is('PUNCT', ']')) {
+        throw new SyntaxError(`Tamanho de array ausente (linha ${this.peek().line})`);
       }
-      this.next();
-      dims.push(parseInt(sizeTok.value, 10));
+      dimsExpr.push(this.parseExpr());
       this.expect('PUNCT', ']');
     }
-    if (dims.length > 0) {
-      // monta tipo array (do mais interno para o mais externo)
-      let t: CType = type;
-      for (let i = dims.length - 1; i >= 0; i--) {
-        t = { kind: 'array', of: t, size: dims[i] };
-      }
-      type = t;
-    }
+    // As dimensões de arrays (inclusive VLA) são resolvidas no runtime.
     let init: Initializer | undefined;
     if (this.match('PUNCT', '=')) init = this.parseInitializer();
-    return { kind: 'VarDecl', type, name: nameTok.value, init, line: nameTok.line };
+    return {
+      kind: 'VarDecl',
+      type,
+      name: nameTok.value,
+      arrayDims: dimsExpr.length > 0 ? dimsExpr : undefined,
+      init,
+      line: nameTok.line,
+    };
   }
 
   parseInitializer(): Initializer {
